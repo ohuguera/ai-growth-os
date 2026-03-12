@@ -1,0 +1,2437 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Creative Engine — Command Center</title>
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  --radius-sm:   6px;
+  --radius-md:  12px;
+  --radius-lg:  18px;
+  --radius-xl:  24px;
+  --radius-pill:999px;
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.06);
+  --shadow-sm: 0 1px 6px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 20px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.05);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.18);
+
+  --green:  #30D158;
+  --yellow: #FFD60A;
+  --red:    #FF453A;
+  --blue:   #0A84FF;
+  --purple: #BF5AF2;
+  --orange: #FF9F0A;
+
+  --transition: 180ms cubic-bezier(.4,0,.2,1);
+  --transition-slow: 320ms cubic-bezier(.4,0,.2,1);
+}
+
+[data-theme="dark"] {
+  --bg:           #000000;
+  --bg-elevated:  #111111;
+  --bg-card:      #161616;
+  --bg-card-hover:#1c1c1c;
+  --bg-input:     #1e1e1e;
+  --bg-active:    #252525;
+  --border:       rgba(255,255,255,.08);
+  --border-focus: rgba(255,255,255,.2);
+  --text-primary: #F5F5F7;
+  --text-secondary:#8E8E93;
+  --text-tertiary:#48484A;
+  --accent:       #0A84FF;
+  --accent-hover: #409CFF;
+  --pill-bg:      rgba(255,255,255,.06);
+  --pill-hover:   rgba(255,255,255,.1);
+  --sidebar-bg:   #0a0a0a;
+  --scrollbar:    rgba(255,255,255,.08);
+}
+
+[data-theme="light"] {
+  --bg:           #F5F5F7;
+  --bg-elevated:  #ffffff;
+  --bg-card:      #ffffff;
+  --bg-card-hover:#f9f9fb;
+  --bg-input:     #f2f2f7;
+  --bg-active:    #E8E8ED;
+  --border:       rgba(0,0,0,.06);
+  --border-focus: rgba(0,0,0,.15);
+  --text-primary: #1d1d1f;
+  --text-secondary:#6e6e73;
+  --text-tertiary:#aeaeb2;
+  --accent:       #0071E3;
+  --accent-hover: #0077ED;
+  --pill-bg:      rgba(0,0,0,.04);
+  --pill-hover:   rgba(0,0,0,.07);
+  --sidebar-bg:   #ebebed;
+  --scrollbar:    rgba(0,0,0,.08);
+}
+
+/* ═══════════════════════════════════════════════
+   RESET + BASE
+═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+               'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 99px; }
+
+/* ═══════════════════════════════════════════════
+   LAYOUT SHELL
+═══════════════════════════════════════════════ */
+.shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  grid-template-rows: 100vh;
+  height: 100vh;
+}
+
+/* ═══════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════ */
+.sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 12px;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 20px;
+}
+
+.sidebar-logo-icon {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.sidebar-logo-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -.2px;
+  color: var(--text-primary);
+}
+
+.sidebar-logo-sub {
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+
+.sidebar-section {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  padding: 14px 10px 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 450;
+  letter-spacing: -.1px;
+  user-select: none;
+  border: 1px solid transparent;
+}
+
+.nav-item:hover {
+  background: var(--pill-hover);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--bg-active);
+  color: var(--text-primary);
+  font-weight: 560;
+  border-color: var(--border);
+}
+
+.nav-item svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: .7;
+}
+
+.nav-item.active svg { opacity: 1; }
+
+.nav-badge {
+  margin-left: auto;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 99px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 13px;
+  transition: all var(--transition);
+}
+
+.theme-toggle:hover { background: var(--pill-hover); color: var(--text-primary); }
+
+/* ═══════════════════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════════════════ */
+.main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.topbar-left { display: flex; flex-direction: column; gap: 2px; }
+
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -.5px;
+  color: var(--text-primary);
+}
+
+.page-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: all var(--transition);
+  border: 1px solid transparent;
+  letter-spacing: -.1px;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+.btn-secondary {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover { background: var(--bg-active); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+
+.btn-ghost:hover { color: var(--text-primary); background: var(--pill-hover); }
+
+.btn svg { width: 14px; height: 14px; }
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px;
+}
+
+/* ═══════════════════════════════════════════════
+   PAGES (show/hide)
+═══════════════════════════════════════════════ */
+.page { display: none; animation: fadeIn 200ms ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+/* ═══════════════════════════════════════════════
+   STATUS DOTS
+═══════════════════════════════════════════════ */
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-green  { background: var(--green);  box-shadow: 0 0 0 3px rgba(48,209,88,.2); }
+.dot-yellow { background: var(--yellow); box-shadow: 0 0 0 3px rgba(255,214,10,.2); }
+.dot-red    { background: var(--red);    box-shadow: 0 0 0 3px rgba(255,69,58,.2); }
+.dot-blue   { background: var(--blue);   box-shadow: 0 0 0 3px rgba(10,132,255,.2); }
+
+.dot-pulse { animation: pulse 2s infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+/* ═══════════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════════ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.card:hover {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-md);
+}
+
+.card-pad { padding: 20px; }
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: .1px;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.card-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.card-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════════
+   GRID LAYOUTS
+═══════════════════════════════════════════════ */
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+
+/* ═══════════════════════════════════════════════
+   MODULE CARDS (Command Center)
+═══════════════════════════════════════════════ */
+.module-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.module-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--module-accent, var(--accent));
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.module-card:hover::before { opacity: 1; }
+
+.module-card:hover {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-md);
+  background: var(--bg-card-hover);
+  transform: translateY(-1px);
+}
+
+.module-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.module-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: var(--module-icon-bg, rgba(10,132,255,.12));
+  flex-shrink: 0;
+}
+
+.module-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 550;
+  padding: 4px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--pill-bg);
+}
+
+.module-name {
+  font-size: 16px;
+  font-weight: 660;
+  letter-spacing: -.4px;
+  margin-bottom: 4px;
+}
+
+.module-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.module-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.module-stat {
+  background: var(--bg-input);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+.module-stat-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.module-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -.5px;
+}
+
+/* ═══════════════════════════════════════════════
+   PIPELINE FLOW
+═══════════════════════════════════════════════ */
+.pipeline-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.pipeline-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  font-size: 11px;
+  margin-bottom: 20px;
+}
+
+.pipeline-flow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.pipeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 100px;
+  position: relative;
+}
+
+.pipeline-step-node {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  border: 2px solid;
+  background: var(--bg-input);
+  position: relative;
+  z-index: 1;
+  transition: all var(--transition);
+}
+
+.pipeline-step:hover .pipeline-step-node {
+  transform: scale(1.08);
+  box-shadow: var(--shadow-md);
+}
+
+.pipeline-step-node.green  { border-color: var(--green);  box-shadow: 0 0 0 4px rgba(48,209,88,.12); }
+.pipeline-step-node.yellow { border-color: var(--yellow); box-shadow: 0 0 0 4px rgba(255,214,10,.12); }
+.pipeline-step-node.red    { border-color: var(--red);    box-shadow: 0 0 0 4px rgba(255,69,58,.12); }
+.pipeline-step-node.blue   { border-color: var(--blue);   box-shadow: 0 0 0 4px rgba(10,132,255,.12); }
+
+.pipeline-step-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -.1px;
+}
+
+.pipeline-step-status {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.pipeline-connector {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  position: relative;
+  top: -20px;
+  min-width: 20px;
+}
+
+.pipeline-connector.active {
+  background: linear-gradient(90deg, var(--green), var(--blue));
+}
+
+.pipeline-connector-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--blue);
+  position: absolute;
+  top: -2px;
+  animation: flow 2s linear infinite;
+}
+
+@keyframes flow {
+  from { left: 0%; } to { left: 100%; }
+}
+
+/* ═══════════════════════════════════════════════
+   SECTION HEADERS
+═══════════════════════════════════════════════ */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-size: 17px;
+  font-weight: 660;
+  letter-spacing: -.4px;
+}
+
+.section-action {
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 550;
+  transition: opacity var(--transition);
+}
+
+.section-action:hover { opacity: .7; }
+
+/* ═══════════════════════════════════════════════
+   SCRIPTS PAGE
+═══════════════════════════════════════════════ */
+.script-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition);
+}
+
+.script-card:hover {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-md);
+}
+
+.script-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.script-id {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+.script-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chip {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  letter-spacing: .2px;
+}
+
+.chip-blue   { background: rgba(10,132,255,.15);  color: var(--blue); }
+.chip-green  { background: rgba(48,209,88,.15);   color: var(--green); }
+.chip-yellow { background: rgba(255,214,10,.15);  color: #c8a800; }
+.chip-purple { background: rgba(191,90,242,.15);  color: var(--purple); }
+.chip-orange { background: rgba(255,159,10,.15);  color: var(--orange); }
+.chip-red    { background: rgba(255,69,58,.15);   color: var(--red); }
+
+.script-sections { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+
+.script-section {
+  display: flex;
+  gap: 12px;
+}
+
+.script-section-label {
+  width: 76px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.label-hook { color: var(--blue); }
+.label-benefit { color: var(--green); }
+.label-cta { color: var(--orange); }
+
+.script-section-content {
+  flex: 1;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-primary);
+  background: var(--bg-input);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.script-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+/* ═══════════════════════════════════════════════
+   TEMPLATES PAGE
+═══════════════════════════════════════════════ */
+.template-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.template-card:hover {
+  border-color: var(--border-focus);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.template-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(10,132,255,.2), var(--shadow-md);
+}
+
+.template-header {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.template-name {
+  font-size: 15px;
+  font-weight: 660;
+  letter-spacing: -.3px;
+  margin-bottom: 4px;
+}
+
+.template-uses {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.template-steps { padding: 14px 18px; display: flex; flex-direction: column; gap: 6px; }
+
+.template-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  font-size: 12.5px;
+}
+
+.template-step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg-active);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════
+   OFFERS PAGE
+═══════════════════════════════════════════════ */
+.offer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.offer-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.offer-card:hover {
+  border-color: var(--border-focus);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.offer-card.active {
+  border-color: var(--accent);
+  background: rgba(10,132,255,.05);
+}
+
+.offer-icon {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+.offer-name {
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -.2px;
+  margin-bottom: 4px;
+}
+
+.offer-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.offer-scripts {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════
+   BLUEPRINT PAGE
+═══════════════════════════════════════════════ */
+.blueprint-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition);
+}
+
+.blueprint-card:hover { border-color: var(--border-focus); box-shadow: var(--shadow-md); }
+
+.blueprint-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-elevated);
+}
+
+.blueprint-title { font-size: 14px; font-weight: 660; letter-spacing: -.2px; }
+
+.scenes { padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+
+.scene {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  transition: all var(--transition);
+}
+
+.scene:hover { border-color: var(--border-focus); background: var(--bg-active); }
+
+.scene-number {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1.5px solid;
+}
+
+.scene-number.hook    { border-color: var(--blue);   color: var(--blue);   background: rgba(10,132,255,.08); }
+.scene-number.benefit { border-color: var(--green);  color: var(--green);  background: rgba(48,209,88,.08); }
+.scene-number.cta     { border-color: var(--orange); color: var(--orange); background: rgba(255,159,10,.08); }
+
+.scene-info { flex: 1; }
+
+.scene-type {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 3px;
+}
+
+.scene-type.hook    { color: var(--blue); }
+.scene-type.benefit { color: var(--green); }
+.scene-type.cta     { color: var(--orange); }
+
+.scene-desc {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.scene-duration {
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.blueprint-actions {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  background: var(--bg-elevated);
+}
+
+/* ═══════════════════════════════════════════════
+   METRIC ROW (top stats)
+═══════════════════════════════════════════════ */
+.metric-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+
+.metric-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.metric-delta {
+  font-size: 12px;
+  font-weight: 550;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.delta-up   { color: var(--green); }
+.delta-down { color: var(--red); }
+.delta-neutral { color: var(--text-secondary); }
+
+/* ═══════════════════════════════════════════════
+   PROGRESS BAR
+═══════════════════════════════════════════════ */
+.progress-bar {
+  height: 4px;
+  background: var(--bg-input);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+  transition: width 1s cubic-bezier(.4,0,.2,1);
+}
+
+.progress-fill.green  { background: var(--green); }
+.progress-fill.yellow { background: var(--yellow); }
+.progress-fill.red    { background: var(--red); }
+
+/* ═══════════════════════════════════════════════
+   DIVIDER
+═══════════════════════════════════════════════ */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+/* ═══════════════════════════════════════════════
+   SEARCH BAR
+═══════════════════════════════════════════════ */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  transition: border-color var(--transition);
+}
+
+.search-bar:focus-within { border-color: var(--border-focus); }
+
+.search-bar input {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  width: 100%;
+}
+
+.search-bar input::placeholder { color: var(--text-tertiary); }
+
+.search-bar svg { width: 14px; height: 14px; color: var(--text-tertiary); flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════════
+   FILTER TABS
+═══════════════════════════════════════════════ */
+.filter-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-input);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  border: 1px solid var(--border);
+}
+
+.filter-tab {
+  padding: 5px 12px;
+  border-radius: calc(var(--radius-md) - 2px);
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: all var(--transition);
+  color: var(--text-secondary);
+}
+
+.filter-tab.active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+.filter-tab:hover:not(.active) { color: var(--text-primary); }
+
+/* ═══════════════════════════════════════════════
+   TOOLTIP
+═══════════════════════════════════════════════ */
+[data-tooltip] { position: relative; }
+[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-primary);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ═══════════════════════════════════════════════
+   ACTIVITY FEED
+═══════════════════════════════════════════════ */
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.activity-item:last-child { border-bottom: none; }
+
+.activity-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.activity-content { flex: 1; }
+
+.activity-text { font-size: 13px; line-height: 1.45; }
+.activity-text strong { font-weight: 600; }
+
+.activity-time { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+/* ═══════════════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════════════ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  gap: 12px;
+}
+
+.empty-icon { font-size: 36px; opacity: .4; }
+.empty-title { font-size: 16px; font-weight: 660; }
+.empty-desc { font-size: 13px; color: var(--text-secondary); max-width: 280px; line-height: 1.5; }
+
+/* STUDIO PAGE */
+.studio-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.studio-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition);
+}
+
+.studio-item:hover { border-color: var(--border-focus); box-shadow: var(--shadow-sm); }
+
+.studio-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.studio-info { flex: 1; }
+.studio-name { font-size: 14px; font-weight: 600; letter-spacing: -.2px; }
+.studio-meta { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+.studio-progress { width: 120px; }
+.studio-progress-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; text-align: right; }
+
+.studio-actions { display: flex; gap: 6px; }
+
+/* Utility */
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.mb-4 { margin-bottom: 16px; }
+.mb-6 { margin-bottom: 24px; }
+.text-sm { font-size: 12px; }
+.text-secondary { color: var(--text-secondary); }
+.font-semibold { font-weight: 600; }
+.w-full { width: 100%; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ═══════════════════════ SIDEBAR ═══════════════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">⚡</div>
+      <div>
+        <div class="sidebar-logo-text">Creative Engine</div>
+        <div class="sidebar-logo-sub">iGaming AI</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">Workspace</div>
+
+    <div class="nav-item active" onclick="navigate('command-center', this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zM0 8a8 8 0 1116 0A8 8 0 010 8z"/><path d="M8 4a.5.5 0 01.5.5v3.793l2.354 2.353a.5.5 0 01-.708.708l-2.5-2.5A.5.5 0 017.5 8.5V4.5A.5.5 0 018 4z"/></svg>
+      Command Center
+    </div>
+
+    <div class="nav-item" onclick="navigate('sources', this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M14 1a1 1 0 011 1v12a1 1 0 01-1 1H2a1 1 0 01-1-1V2a1 1 0 011-1h12zM2 0a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V2a2 2 0 00-2-2H2z"/><path d="M5 4a1 1 0 100 2 1 1 0 000-2zm0 4a1 1 0 100 2 1 1 0 000-2zm6-4a1 1 0 100 2 1 1 0 000-2zm0 4a1 1 0 100 2 1 1 0 000-2z"/></svg>
+      Sources
+      <span class="nav-badge">4</span>
+    </div>
+
+    <div class="sidebar-section">Content</div>
+
+    <div class="nav-item" onclick="navigate('scripts', this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M14.5 3a.5.5 0 01.5.5v9a.5.5 0 01-.5.5h-13a.5.5 0 01-.5-.5v-9a.5.5 0 01.5-.5h13zm-13-1A1.5 1.5 0 000 3.5v9A1.5 1.5 0 001.5 14h13a1.5 1.5 0 001.5-1.5v-9A1.5 1.5 0 0014.5 2h-13z"/><path d="M3 5.5a.5.5 0 01.5-.5h9a.5.5 0 010 1h-9a.5.5 0 01-.5-.5zM3 8a.5.5 0 01.5-.5h9a.5.5 0 010 1h-9A.5.5 0 013 8zm0 2.5a.5.5 0 01.5-.5h6a.5.5 0 010 1h-6a.5.5 0 01-.5-.5z"/></svg>
+      Scripts
+      <span class="nav-badge">12</span>
+    </div>
+
+    <div class="nav-item" onclick="navigate('templates', this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5A1.5 1.5 0 012.5 1h3A1.5 1.5 0 017 2.5v3A1.5 1.5 0 015.5 7h-3A1.5 1.5 0 011 5.5v-3zM2.5 2a.5.5 0 00-.5.5v3a.5.5 0 00.5.5h3a.5.5 0 00.5-.5v-3a.5.5 0 00-.5-.5h-3zm6.5.5A1.5 1.5 0 0110.5 1h3A1.5 1.5 0 0115 2.5v3A1.5 1.5 0 0113.5 7h-3A1.5 1.5 0 019 5.5v-3zm1.5-.5a.5.5 0 00-.5.5v3a.5.5 0 00.5.5h3a.5.5 0 00.5-.5v-3a.5.5 0 00-.5-.5h-3zM1 10.5A1.5 1.5 0 012.5 9h3A1.5 1.5 0 017 10.5v3A1.5 1.5 0 015.5 15h-3A1.5 1.5 0 011 13.5v-3zm1.5-.5a.5.5 0 00-.5.5v3a.5.5 0 00.5.5h3a.5.5 0 00.5-.5v-3a.5.5 0 00-.5-.5h-3zm6.5.5A1.5 1.5 0 0110.5 9h3a1.5 1.5 0 011.5 1.5v3a1.5 1.5 0 01-1.5 1.5h-3A1.5 1.5 0 019 13.5v-3z"/></svg>
+      Templates
+    </div>
+
+    <div class="nav-item" onclick="navigate('offers', this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M9.5 2a.5.5 0 000 1h-3a.5.5 0 000-1h3zm3 4a.5.5 0 000-1h-9a.5.5 0 000 1h9zm-9 2a.5.5 0 000 1h9a.5.5 0 000-1h-9zm0 3a.5.5 0 000 1h9a.5.5 0 000-1h-9z"/></svg>
+      Offers
+    </div>
+
+    <div class="sidebar-section">Production</div>
+
+    <div class="nav-item" onclick="navigate('blueprint', this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 0A1.5 1.5 0 000 1.5v2A1.5 1.5 0 001.5 5h2A1.5 1.5 0 005 3.5v-2A1.5 1.5 0 003.5 0h-2zm0 1h2a.5.5 0 01.5.5v2a.5.5 0 01-.5.5h-2a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5zm8.5 0A1.5 1.5 0 008.5 1.5v2A1.5 1.5 0 0010 5h4.5A1.5 1.5 0 0016 3.5v-2A1.5 1.5 0 0014.5 1H10zM9 1.5a.5.5 0 01.5-.5h5a.5.5 0 01.5.5v2a.5.5 0 01-.5.5h-5a.5.5 0 01-.5-.5v-2zM0 8a2 2 0 012-2h12a2 2 0 012 2v5a2 2 0 01-2 2H2a2 2 0 01-2-2V8zm1 3v2a1 1 0 001 1h12a1 1 0 001-1v-2H1zm14-1V8a1 1 0 00-1-1H2a1 1 0 00-1 1v2h14z"/></svg>
+      Blueprint
+    </div>
+
+    <div class="nav-item" onclick="navigate('studio', this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 1a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H1a1 1 0 01-1-1V1zm4 0v6h8V1H4zm8 8H4v6h8V9zM1 1v2h2V1H1zm2 3H1v2h2V4zM1 8v2h2V8H1zm2 3H1v2h2v-2zm10-3h2V6h-2v2zm2 1h-2v2h2V9z"/></svg>
+      Studio
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="theme-toggle" onclick="toggleTheme()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 11a3 3 0 110-6 3 3 0 010 6zm0 1a4 4 0 100-8 4 4 0 000 8zM8 0a.5.5 0 01.5.5v2a.5.5 0 01-1 0v-2A.5.5 0 018 0zm0 13a.5.5 0 01.5.5v2a.5.5 0 01-1 0v-2A.5.5 0 018 13zm8-5a.5.5 0 01-.5.5h-2a.5.5 0 010-1h2a.5.5 0 01.5.5zM3 8a.5.5 0 01-.5.5h-2a.5.5 0 010-1h2A.5.5 0 013 8zm10.657-5.657a.5.5 0 010 .707l-1.414 1.415a.5.5 0 11-.707-.708l1.414-1.414a.5.5 0 01.707 0zm-9.193 9.193a.5.5 0 010 .707L3.05 13.657a.5.5 0 01-.707-.707l1.414-1.414a.5.5 0 01.707 0zm9.193 2.121a.5.5 0 01-.707 0l-1.414-1.414a.5.5 0 01.707-.707l1.414 1.414a.5.5 0 010 .707zM4.464 4.465a.5.5 0 01-.707 0L2.343 3.05a.5.5 0 11.707-.707l1.414 1.414a.5.5 0 010 .707z"/></svg>
+        Toggle theme
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════ MAIN ═══════════════════════ -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar" id="topbar">
+      <div class="topbar-left">
+        <div class="page-title" id="topbar-title">Command Center</div>
+        <div class="page-subtitle" id="topbar-sub">System overview — 10 Mar 2026, 14:32</div>
+      </div>
+      <div class="topbar-right">
+        <div class="filter-tabs" id="topbar-tabs">
+          <div class="filter-tab active">Today</div>
+          <div class="filter-tab">7d</div>
+          <div class="filter-tab">30d</div>
+        </div>
+        <button class="btn btn-primary" id="topbar-cta" onclick="primaryAction()">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 01.5.5v3h3a.5.5 0 010 1h-3v3a.5.5 0 01-1 0v-3h-3a.5.5 0 010-1h3v-3A.5.5 0 018 4z"/></svg>
+          Generate Batch
+        </button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- ══════════════════════════════════
+           PAGE: COMMAND CENTER
+      ══════════════════════════════════ -->
+      <div class="page active" id="page-command-center">
+
+        <!-- Top metrics -->
+        <div class="metric-row">
+          <div class="metric-card">
+            <div class="metric-label">Creatives Today</div>
+            <div class="metric-value">247</div>
+            <div class="progress-bar"><div class="progress-fill green" style="width:82%"></div></div>
+            <div class="metric-delta delta-up mt-1">↑ 82% of 300 target</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Scripts Generated</div>
+            <div class="metric-value">31</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:62%"></div></div>
+            <div class="metric-delta delta-up mt-1">↑ +8 vs yesterday</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Avg Hook Retention</div>
+            <div class="metric-value">79.4%</div>
+            <div class="progress-bar"><div class="progress-fill green" style="width:79%"></div></div>
+            <div class="metric-delta delta-up mt-1">↑ +5.2pp this week</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">CTA Click Rate</div>
+            <div class="metric-value">14.7%</div>
+            <div class="progress-bar"><div class="progress-fill yellow" style="width:14.7%"></div></div>
+            <div class="metric-delta delta-down mt-1">↓ -1.1pp vs avg</div>
+          </div>
+        </div>
+
+        <!-- Pipeline Flow -->
+        <div class="pipeline-container mb-6">
+          <div class="pipeline-title">Generation Pipeline</div>
+          <div class="pipeline-flow">
+
+            <div class="pipeline-step">
+              <div class="pipeline-step-node green">🌐</div>
+              <div class="pipeline-step-label">Sources</div>
+              <div class="pipeline-step-status">4 active</div>
+            </div>
+
+            <div class="pipeline-connector active"><div class="pipeline-connector-dot"></div></div>
+
+            <div class="pipeline-step">
+              <div class="pipeline-step-node green">🔍</div>
+              <div class="pipeline-step-label">Trend Hunter</div>
+              <div class="pipeline-step-status">12 trending</div>
+            </div>
+
+            <div class="pipeline-connector active"><div class="pipeline-connector-dot" style="animation-delay:.5s"></div></div>
+
+            <div class="pipeline-step">
+              <div class="pipeline-step-node green">✍️</div>
+              <div class="pipeline-step-label">Creator</div>
+              <div class="pipeline-step-status">3 running</div>
+            </div>
+
+            <div class="pipeline-connector active"><div class="pipeline-connector-dot" style="animation-delay:1s"></div></div>
+
+            <div class="pipeline-step">
+              <div class="pipeline-step-node yellow">📐</div>
+              <div class="pipeline-step-label">Blueprint</div>
+              <div class="pipeline-step-status">Underperforming</div>
+            </div>
+
+            <div class="pipeline-connector">
+            </div>
+
+            <div class="pipeline-step">
+              <div class="pipeline-step-node blue">🎬</div>
+              <div class="pipeline-step-label">Studio</div>
+              <div class="pipeline-step-status">Queue: 8</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Module Cards -->
+        <div class="section-header mb-4">
+          <div class="section-title">System Modules</div>
+          <div class="section-action">Configure all →</div>
+        </div>
+
+        <div class="grid-5 mb-6">
+
+          <!-- Sources -->
+          <div class="module-card" style="--module-accent:var(--blue);--module-icon-bg:rgba(10,132,255,.12)" onclick="navigate('sources', null)">
+            <div class="module-top">
+              <div class="module-icon">🌐</div>
+              <div class="module-status">
+                <div class="dot dot-green dot-pulse"></div>
+                Working
+              </div>
+            </div>
+            <div class="module-name">Sources</div>
+            <div class="module-desc">Data ingestion from competitors, trends, and social platforms.</div>
+            <div class="module-stats">
+              <div class="module-stat">
+                <div class="module-stat-label">Running</div>
+                <div class="module-stat-value" style="color:var(--blue)">4</div>
+              </div>
+              <div class="module-stat">
+                <div class="module-stat-label">Done today</div>
+                <div class="module-stat-value">2.4K</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trend Hunter -->
+          <div class="module-card" style="--module-accent:var(--purple);--module-icon-bg:rgba(191,90,242,.12)" onclick="navigate('sources', null)">
+            <div class="module-top">
+              <div class="module-icon">🔍</div>
+              <div class="module-status">
+                <div class="dot dot-green dot-pulse"></div>
+                Working
+              </div>
+            </div>
+            <div class="module-name">Trend Hunter</div>
+            <div class="module-desc">Detects viral formats, hooks and patterns from top performers.</div>
+            <div class="module-stats">
+              <div class="module-stat">
+                <div class="module-stat-label">Running</div>
+                <div class="module-stat-value" style="color:var(--purple)">2</div>
+              </div>
+              <div class="module-stat">
+                <div class="module-stat-label">Trends found</div>
+                <div class="module-stat-value">12</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Creator -->
+          <div class="module-card" style="--module-accent:var(--green);--module-icon-bg:rgba(48,209,88,.12)" onclick="navigate('scripts', null)">
+            <div class="module-top">
+              <div class="module-icon">✍️</div>
+              <div class="module-status">
+                <div class="dot dot-green dot-pulse"></div>
+                Working
+              </div>
+            </div>
+            <div class="module-name">Creator</div>
+            <div class="module-desc">Generates Hook + Benefit + CTA scripts from offers and templates.</div>
+            <div class="module-stats">
+              <div class="module-stat">
+                <div class="module-stat-label">Running</div>
+                <div class="module-stat-value" style="color:var(--green)">3</div>
+              </div>
+              <div class="module-stat">
+                <div class="module-stat-label">Scripts today</div>
+                <div class="module-stat-value">31</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Blueprint -->
+          <div class="module-card" style="--module-accent:var(--yellow);--module-icon-bg:rgba(255,214,10,.12)" onclick="navigate('blueprint', null)">
+            <div class="module-top">
+              <div class="module-icon">📐</div>
+              <div class="module-status">
+                <div class="dot dot-yellow dot-pulse"></div>
+                Slow
+              </div>
+            </div>
+            <div class="module-name">Blueprint</div>
+            <div class="module-desc">Builds scene-by-scene production structures from scripts.</div>
+            <div class="module-stats">
+              <div class="module-stat">
+                <div class="module-stat-label">Running</div>
+                <div class="module-stat-value" style="color:var(--yellow)">1</div>
+              </div>
+              <div class="module-stat">
+                <div class="module-stat-label">Built today</div>
+                <div class="module-stat-value">18</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Studio -->
+          <div class="module-card" style="--module-accent:var(--orange);--module-icon-bg:rgba(255,159,10,.12)" onclick="navigate('studio', null)">
+            <div class="module-top">
+              <div class="module-icon">🎬</div>
+              <div class="module-status">
+                <div class="dot dot-green dot-pulse"></div>
+                Working
+              </div>
+            </div>
+            <div class="module-name">Studio</div>
+            <div class="module-desc">Renders, exports and delivers final video creatives.</div>
+            <div class="module-stats">
+              <div class="module-stat">
+                <div class="module-stat-label">In queue</div>
+                <div class="module-stat-value" style="color:var(--orange)">8</div>
+              </div>
+              <div class="module-stat">
+                <div class="module-stat-label">Exported</div>
+                <div class="module-stat-value">247</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom row: Activity + Top Hooks -->
+        <div class="grid-2">
+
+          <div class="card card-pad">
+            <div class="section-header">
+              <div class="font-semibold">Recent Activity</div>
+              <div class="section-action">View all →</div>
+            </div>
+
+            <div class="activity-item">
+              <div class="activity-icon" style="background:rgba(48,209,88,.12)">✅</div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Script #031</strong> generated — Big Win Reveal, Hook score 94%</div>
+                <div class="activity-time">2 minutes ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:rgba(10,132,255,.12)">🔍</div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Trend detected</strong> — "Live cashout reaction" format +67% on TikTok</div>
+                <div class="activity-time">8 minutes ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:rgba(255,159,10,.12)">🎬</div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Batch #14</strong> exported — 50 creatives sent to Studio</div>
+                <div class="activity-time">21 minutes ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:rgba(255,69,58,.12)">⚠️</div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Compliance flag</strong> — Script #029 needs responsible gambling disclaimer</div>
+                <div class="activity-time">34 minutes ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:rgba(191,90,242,.12)">📐</div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Blueprint #022</strong> generated — 4 scenes, Sports Prediction format</div>
+                <div class="activity-time">47 minutes ago</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-pad">
+            <div class="section-header">
+              <div class="font-semibold">Top Hooks Today</div>
+              <div class="section-action">Biblioteca →</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius-md);">
+                <div style="font-size:11px;font-weight:700;color:var(--text-tertiary);width:20px;text-align:center">#1</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">"Você não vai acreditar..."</div>
+                  <div style="font-size:11px;color:var(--text-secondary)">Big Win Reveal · 3s</div>
+                </div>
+                <div style="font-size:13px;font-weight:700;color:var(--green)">94%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius-md);">
+                <div style="font-size:11px;font-weight:700;color:var(--text-tertiary);width:20px;text-align:center">#2</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">"Olha o que aconteceu..."</div>
+                  <div style="font-size:11px;color:var(--text-secondary)">Live Reaction · 4s</div>
+                </div>
+                <div style="font-size:13px;font-weight:700;color:var(--green)">91%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius-md);">
+                <div style="font-size:11px;font-weight:700;color:var(--text-tertiary);width:20px;text-align:center">#3</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">"Esse bônus nunca vi antes..."</div>
+                  <div style="font-size:11px;color:var(--text-secondary)">Bonus Hunt · 3s</div>
+                </div>
+                <div style="font-size:13px;font-weight:700;color:var(--green)">88%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius-md);">
+                <div style="font-size:11px;font-weight:700;color:var(--text-tertiary);width:20px;text-align:center">#4</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">"R$100 virou isso em 3 min..."</div>
+                  <div style="font-size:11px;color:var(--text-secondary)">Big Win Reveal · 2s</div>
+                </div>
+                <div style="font-size:13px;font-weight:700;color:var(--yellow)">76%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius-md);">
+                <div style="font-size:11px;font-weight:700;color:var(--text-tertiary);width:20px;text-align:center">#5</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">"Primeiro depósito e já..."</div>
+                  <div style="font-size:11px;color:var(--text-secondary)">First Deposit · 3s</div>
+                </div>
+                <div style="font-size:13px;font-weight:700;color:var(--yellow)">71%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           PAGE: SOURCES
+      ══════════════════════════════════ -->
+      <div class="page" id="page-sources">
+        <div class="metric-row">
+          <div class="metric-card">
+            <div class="metric-label">Active Sources</div>
+            <div class="metric-value">4</div>
+            <div class="metric-delta delta-up mt-1">↑ All healthy</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Data Points Today</div>
+            <div class="metric-value">2.4K</div>
+            <div class="metric-delta delta-up mt-1">↑ +340 vs yesterday</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Trends Detected</div>
+            <div class="metric-value">12</div>
+            <div class="metric-delta delta-neutral mt-1">→ Stable</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Last Scan</div>
+            <div class="metric-value" style="font-size:18px">4m ago</div>
+            <div class="metric-delta delta-up mt-1">↑ On schedule</div>
+          </div>
+        </div>
+
+        <div class="section-header mb-4">
+          <div class="section-title">Connected Sources</div>
+          <button class="btn btn-primary">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 01.5.5v3h3a.5.5 0 010 1h-3v3a.5.5 0 01-1 0v-3h-3a.5.5 0 010-1h3v-3A.5.5 0 018 4z"/></svg>
+            Add Source
+          </button>
+        </div>
+
+        <div class="flex-col gap-3">
+          <div class="card" style="padding:18px 20px">
+            <div class="flex items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid var(--border)">🎵</div>
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:660;margin-bottom:2px">TikTok Creative Center</div>
+                <div style="font-size:12px;color:var(--text-secondary)">Top ads · iGaming · BR market · Updated every 6h</div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="chip chip-green">Active</span>
+                <div style="text-align:right">
+                  <div style="font-size:13px;font-weight:700">847</div>
+                  <div style="font-size:11px;color:var(--text-secondary)">ads scraped</div>
+                </div>
+                <button class="btn btn-ghost">Configure</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:18px 20px">
+            <div class="flex items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#4267B2,#8B9DC3);display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid var(--border)">📘</div>
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:660;margin-bottom:2px">Meta Ads Library</div>
+                <div style="font-size:12px;color:var(--text-secondary)">Active gambling ads · Bet365, Betano, Pixbet · Updated daily</div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="chip chip-green">Active</span>
+                <div style="text-align:right">
+                  <div style="font-size:13px;font-weight:700">1.2K</div>
+                  <div style="font-size:11px;color:var(--text-secondary)">ads indexed</div>
+                </div>
+                <button class="btn btn-ghost">Configure</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:18px 20px">
+            <div class="flex items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#FF0000,#CC0000);display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid var(--border)">▶️</div>
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:660;margin-bottom:2px">YouTube Shorts</div>
+                <div style="font-size:12px;color:var(--text-secondary)">Casino streamers · Bonus hunt channels · Top 50 by views</div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="chip chip-green">Active</span>
+                <div style="text-align:right">
+                  <div style="font-size:13px;font-weight:700">312</div>
+                  <div style="font-size:11px;color:var(--text-secondary)">videos analyzed</div>
+                </div>
+                <button class="btn btn-ghost">Configure</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:18px 20px">
+            <div class="flex items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#9146FF,#6441A5);display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid var(--border)">🎮</div>
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:660;margin-bottom:2px">Twitch Clips</div>
+                <div style="font-size:12px;color:var(--text-secondary)">Gambling streams · Top clips this week · Reaction patterns</div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="chip chip-yellow">Slow</span>
+                <div style="text-align:right">
+                  <div style="font-size:13px;font-weight:700">89</div>
+                  <div style="font-size:11px;color:var(--text-secondary)">clips indexed</div>
+                </div>
+                <button class="btn btn-ghost">Configure</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           PAGE: SCRIPTS
+      ══════════════════════════════════ -->
+      <div class="page" id="page-scripts">
+
+        <div class="flex items-center gap-3 mb-6">
+          <div class="search-bar" style="flex:1">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 001.415-1.414l-3.85-3.85a1.007 1.007 0 00-.115-.1zM12 6.5a5.5 5.5 0 11-11 0 5.5 5.5 0 0111 0z"/></svg>
+            <input type="text" placeholder="Search scripts...">
+          </div>
+          <div class="filter-tabs">
+            <div class="filter-tab active">All</div>
+            <div class="filter-tab">Approved</div>
+            <div class="filter-tab">Draft</div>
+            <div class="filter-tab">Flagged</div>
+          </div>
+        </div>
+
+        <div class="flex-col gap-4">
+
+          <!-- Script 031 -->
+          <div class="script-card">
+            <div class="script-header">
+              <div class="flex items-center gap-2">
+                <span class="script-id">#031</span>
+                <span class="chip chip-blue">Big Win Reveal</span>
+              </div>
+              <div class="script-meta">
+                <span class="chip chip-green">Approved</span>
+                <span class="text-sm text-secondary">Hook 94% · Dev 81% · CTA 18%</span>
+                <span class="text-sm text-secondary">· 2h ago</span>
+              </div>
+            </div>
+            <div class="script-sections">
+              <div class="script-section">
+                <div class="script-section-label label-hook">🎣 Hook</div>
+                <div class="script-section-content">Você não vai acreditar o que aconteceu quando esse jogador fez um depósito de R$100 no Bet Master...</div>
+              </div>
+              <div class="script-section">
+                <div class="script-section-label label-benefit">✨ Benefit</div>
+                <div class="script-section-content">Com o bônus de cashback de 20%, ele transformou R$80 de volta na conta em menos de 24h. Sem risco, sem complicação — direto na carteira.</div>
+              </div>
+              <div class="script-section">
+                <div class="script-section-label label-cta">📣 CTA</div>
+                <div class="script-section-content">Cadastre agora e garanta seu primeiro bônus. Link na bio. Jogue com responsabilidade.</div>
+              </div>
+            </div>
+            <div class="script-actions">
+              <button class="btn btn-secondary">✎ Edit Script</button>
+              <button class="btn btn-secondary">📐 Generate Blueprint</button>
+              <button class="btn btn-primary">🎬 Send to Studio</button>
+            </div>
+          </div>
+
+          <!-- Script 030 -->
+          <div class="script-card">
+            <div class="script-header">
+              <div class="flex items-center gap-2">
+                <span class="script-id">#030</span>
+                <span class="chip chip-purple">Bonus Hunt</span>
+              </div>
+              <div class="script-meta">
+                <span class="chip chip-green">Approved</span>
+                <span class="text-sm text-secondary">Hook 88% · Dev 74% · CTA 16%</span>
+                <span class="text-sm text-secondary">· 3h ago</span>
+              </div>
+            </div>
+            <div class="script-sections">
+              <div class="script-section">
+                <div class="script-section-label label-hook">🎣 Hook</div>
+                <div class="script-section-content">Testei 7 plataformas de casino hoje e encontrei o bônus mais absurdo que já vi...</div>
+              </div>
+              <div class="script-section">
+                <div class="script-section-label label-benefit">✨ Benefit</div>
+                <div class="script-section-content">A roleta da sorte libera prêmios toda semana — e os membros VIP ainda ganham acesso aos torneios semanais com premiação em dinheiro real.</div>
+              </div>
+              <div class="script-section">
+                <div class="script-section-label label-cta">📣 CTA</div>
+                <div class="script-section-content">Entre pelo link e gire sua roleta grátis hoje. Válido apenas para novos cadastros.</div>
+              </div>
+            </div>
+            <div class="script-actions">
+              <button class="btn btn-secondary">✎ Edit Script</button>
+              <button class="btn btn-secondary">📐 Generate Blueprint</button>
+              <button class="btn btn-primary">🎬 Send to Studio</button>
+            </div>
+          </div>
+
+          <!-- Script 029 — Flagged -->
+          <div class="script-card">
+            <div class="script-header">
+              <div class="flex items-center gap-2">
+                <span class="script-id">#029</span>
+                <span class="chip chip-orange">First Deposit</span>
+              </div>
+              <div class="script-meta">
+                <span class="chip chip-red">⚠ Compliance</span>
+                <span class="text-sm text-secondary">Missing: responsible gambling disclaimer</span>
+              </div>
+            </div>
+            <div class="script-sections">
+              <div class="script-section">
+                <div class="script-section-label label-hook">🎣 Hook</div>
+                <div class="script-section-content">Primeiro depósito e já saquei no mesmo dia — saques instantâneos funcionam de verdade aqui...</div>
+              </div>
+              <div class="script-section">
+                <div class="script-section-label label-benefit">✨ Benefit</div>
+                <div class="script-section-content">Saques instantâneos via Pix, sem burocracia. O dinheiro cai em menos de 5 minutos na sua conta.</div>
+              </div>
+              <div class="script-section">
+                <div class="script-section-label label-cta">📣 CTA</div>
+                <div class="script-section-content">Abra sua conta agora e faça seu primeiro depósito para liberar o cashback exclusivo.</div>
+              </div>
+            </div>
+            <div style="background:rgba(255,69,58,.08);border-top:1px solid rgba(255,69,58,.2);padding:10px 18px;font-size:12px;color:var(--red)">
+              ⚠ Compliance block — Add "Jogue com responsabilidade" and age gate before sending to Studio.
+            </div>
+            <div class="script-actions">
+              <button class="btn btn-secondary">✎ Fix & Approve</button>
+              <button class="btn btn-ghost">⊗ Archive</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           PAGE: TEMPLATES
+      ══════════════════════════════════ -->
+      <div class="page" id="page-templates">
+        <div class="section-header mb-4">
+          <div class="section-title">Script Templates</div>
+          <button class="btn btn-primary">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 01.5.5v3h3a.5.5 0 010 1h-3v3a.5.5 0 01-1 0v-3h-3a.5.5 0 010-1h3v-3A.5.5 0 018 4z"/></svg>
+            New Template
+          </button>
+        </div>
+
+        <div class="grid-3">
+
+          <div class="template-card selected">
+            <div class="template-header">
+              <div class="template-name">Standard 5-Step</div>
+              <div class="template-uses">Used 47 times · Best performer</div>
+            </div>
+            <div class="template-steps">
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(10,132,255,.15);color:var(--blue)">1</div>
+                <span style="font-size:12px;font-weight:600;color:var(--blue)">Hook</span>
+                <span class="text-secondary text-sm">— Attention grabber</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(48,209,88,.15);color:var(--green)">2</div>
+                <span style="font-size:12px;font-weight:600;color:var(--green)">Main Benefit</span>
+                <span class="text-secondary text-sm">— Primary value prop</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(48,209,88,.1);color:var(--green)">3</div>
+                <span style="font-size:12px;font-weight:600;color:var(--green)">Secondary Benefit</span>
+                <span class="text-secondary text-sm">— Supporting value</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(191,90,242,.12);color:var(--purple)">4</div>
+                <span style="font-size:12px;font-weight:600;color:var(--purple)">Proof</span>
+                <span class="text-secondary text-sm">— Social proof / data</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(255,159,10,.12);color:var(--orange)">5</div>
+                <span style="font-size:12px;font-weight:600;color:var(--orange)">CTA</span>
+                <span class="text-secondary text-sm">— Call to action</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="template-card">
+            <div class="template-header">
+              <div class="template-name">Short 3-Step</div>
+              <div class="template-uses">Used 28 times · TikTok optimized</div>
+            </div>
+            <div class="template-steps">
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(10,132,255,.15);color:var(--blue)">1</div>
+                <span style="font-size:12px;font-weight:600;color:var(--blue)">Hook</span>
+                <span class="text-secondary text-sm">— Strong opener</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(48,209,88,.15);color:var(--green)">2</div>
+                <span style="font-size:12px;font-weight:600;color:var(--green)">Benefit + Proof</span>
+                <span class="text-secondary text-sm">— Combined impact</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(255,159,10,.12);color:var(--orange)">3</div>
+                <span style="font-size:12px;font-weight:600;color:var(--orange)">CTA</span>
+                <span class="text-secondary text-sm">— Urgent close</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="template-card">
+            <div class="template-header">
+              <div class="template-name">Story Arc</div>
+              <div class="template-uses">Used 19 times · YouTube optimized</div>
+            </div>
+            <div class="template-steps">
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(10,132,255,.15);color:var(--blue)">1</div>
+                <span style="font-size:12px;font-weight:600;color:var(--blue)">Problem Hook</span>
+                <span class="text-secondary text-sm">— Pain point</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(191,90,242,.12);color:var(--purple)">2</div>
+                <span style="font-size:12px;font-weight:600;color:var(--purple)">Discovery</span>
+                <span class="text-secondary text-sm">— Found the solution</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(48,209,88,.15);color:var(--green)">3</div>
+                <span style="font-size:12px;font-weight:600;color:var(--green)">Benefit</span>
+                <span class="text-secondary text-sm">— Result achieved</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(48,209,88,.1);color:var(--green)">4</div>
+                <span style="font-size:12px;font-weight:600;color:var(--green)">Proof</span>
+                <span class="text-secondary text-sm">— Evidence</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(255,159,10,.12);color:var(--orange)">5</div>
+                <span style="font-size:12px;font-weight:600;color:var(--orange)">CTA</span>
+                <span class="text-secondary text-sm">— Join me</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="template-card">
+            <div class="template-header">
+              <div class="template-name">Big Win Reveal</div>
+              <div class="template-uses">Used 34 times · Highest hook score</div>
+            </div>
+            <div class="template-steps">
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(10,132,255,.15);color:var(--blue)">1</div>
+                <span style="font-size:12px;font-weight:600;color:var(--blue)">Suspense Hook</span>
+                <span class="text-secondary text-sm">— Cliffhanger open</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(255,69,58,.12);color:var(--red)">2</div>
+                <span style="font-size:12px;font-weight:600;color:var(--red)">Tension Build</span>
+                <span class="text-secondary text-sm">— Escalate stakes</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(48,209,88,.15);color:var(--green)">3</div>
+                <span style="font-size:12px;font-weight:600;color:var(--green)">Reveal</span>
+                <span class="text-secondary text-sm">— The win moment</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(255,159,10,.12);color:var(--orange)">4</div>
+                <span style="font-size:12px;font-weight:600;color:var(--orange)">CTA</span>
+                <span class="text-secondary text-sm">— Your turn</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="template-card">
+            <div class="template-header">
+              <div class="template-name">Comparison</div>
+              <div class="template-uses">Used 12 times · Educational</div>
+            </div>
+            <div class="template-steps">
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(10,132,255,.15);color:var(--blue)">1</div>
+                <span style="font-size:12px;font-weight:600;color:var(--blue)">Hook Question</span>
+                <span class="text-secondary text-sm">— Challenge assumption</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(255,69,58,.12);color:var(--red)">2</div>
+                <span style="font-size:12px;font-weight:600;color:var(--red)">Before / Others</span>
+                <span class="text-secondary text-sm">— What they offer</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(48,209,88,.15);color:var(--green)">3</div>
+                <span style="font-size:12px;font-weight:600;color:var(--green)">After / Us</span>
+                <span class="text-secondary text-sm">— Superior value</span>
+              </div>
+              <div class="template-step">
+                <div class="template-step-num" style="background:rgba(255,159,10,.12);color:var(--orange)">4</div>
+                <span style="font-size:12px;font-weight:600;color:var(--orange)">CTA</span>
+                <span class="text-secondary text-sm">— Switch now</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add new -->
+          <div class="template-card" style="display:flex;align-items:center;justify-content:center;min-height:200px;cursor:pointer;border-style:dashed">
+            <div class="empty-state">
+              <div class="empty-icon">+</div>
+              <div class="empty-title">New Template</div>
+              <div class="empty-desc">Create a custom script structure</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           PAGE: OFFERS
+      ══════════════════════════════════ -->
+      <div class="page" id="page-offers">
+        <div class="section-header mb-4">
+          <div class="section-title">Product Offers</div>
+          <button class="btn btn-primary">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 01.5.5v3h3a.5.5 0 010 1h-3v3a.5.5 0 01-1 0v-3h-3a.5.5 0 010-1h3v-3A.5.5 0 018 4z"/></svg>
+            Add Offer
+          </button>
+        </div>
+
+        <div class="offer-grid">
+          <div class="offer-card active">
+            <div class="offer-icon">💰</div>
+            <div class="offer-name">20% Cashback</div>
+            <div class="offer-desc">Weekly cashback on net losses. Credited every Monday.</div>
+            <div class="offer-scripts">✓ Used in 14 scripts</div>
+          </div>
+          <div class="offer-card">
+            <div class="offer-icon">🎰</div>
+            <div class="offer-name">Lucky Roulette</div>
+            <div class="offer-desc">Daily spin for free credits, bonus spins and mystery prizes.</div>
+            <div class="offer-scripts">✓ Used in 9 scripts</div>
+          </div>
+          <div class="offer-card">
+            <div class="offer-icon">⚡</div>
+            <div class="offer-name">Instant Withdrawals</div>
+            <div class="offer-desc">Pix withdrawals processed in under 5 minutes, 24/7.</div>
+            <div class="offer-scripts">✓ Used in 22 scripts</div>
+          </div>
+          <div class="offer-card active">
+            <div class="offer-icon">👑</div>
+            <div class="offer-name">VIP Club</div>
+            <div class="offer-desc">Exclusive tier benefits: personal account manager, higher limits, event access.</div>
+            <div class="offer-scripts">✓ Used in 7 scripts</div>
+          </div>
+          <div class="offer-card">
+            <div class="offer-icon">🏆</div>
+            <div class="offer-name">Weekly Tournaments</div>
+            <div class="offer-desc">Compete on the leaderboard. Top 10 win real money prizes every Friday.</div>
+            <div class="offer-scripts">✓ Used in 11 scripts</div>
+          </div>
+          <div class="offer-card">
+            <div class="offer-icon">🎁</div>
+            <div class="offer-name">Welcome Bonus 200%</div>
+            <div class="offer-desc">Double your first deposit up to R$500. Claim within 24h of registration.</div>
+            <div class="offer-scripts">✓ Used in 18 scripts</div>
+          </div>
+          <div class="offer-card">
+            <div class="offer-icon">🔓</div>
+            <div class="offer-name">No Wagering Slots</div>
+            <div class="offer-desc">Win real money without meeting wagering requirements. Selected games only.</div>
+            <div class="offer-scripts">✓ Used in 5 scripts</div>
+          </div>
+          <div class="offer-card">
+            <div class="offer-icon">📱</div>
+            <div class="offer-name">App Exclusive Offer</div>
+            <div class="offer-desc">Extra 10% on all deposits made via mobile app. iOS & Android.</div>
+            <div class="offer-scripts">✓ Used in 3 scripts</div>
+          </div>
+          <div class="offer-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center">
+            <div class="empty-state" style="padding:24px">
+              <div class="empty-icon">+</div>
+              <div style="font-size:13px;font-weight:600">Add Offer</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           PAGE: BLUEPRINT
+      ══════════════════════════════════ -->
+      <div class="page" id="page-blueprint">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="search-bar" style="flex:1">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 001.415-1.414l-3.85-3.85a1.007 1.007 0 00-.115-.1zM12 6.5a5.5 5.5 0 11-11 0 5.5 5.5 0 0111 0z"/></svg>
+            <input type="text" placeholder="Search blueprints...">
+          </div>
+          <button class="btn btn-primary">📐 Generate from Script</button>
+        </div>
+
+        <div class="flex-col gap-4">
+
+          <!-- Blueprint 022 -->
+          <div class="blueprint-card">
+            <div class="blueprint-header">
+              <div class="flex items-center gap-2">
+                <span class="script-id">#022</span>
+                <div class="blueprint-title">Big Win Reveal — 20% Cashback</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="chip chip-green">Ready</span>
+                <span class="text-sm text-secondary">From Script #031</span>
+              </div>
+            </div>
+            <div class="scenes">
+              <div class="scene">
+                <div class="scene-number hook">1</div>
+                <div class="scene-info">
+                  <div class="scene-type hook">Hook</div>
+                  <div class="scene-desc">Close-up shot of phone screen showing a growing balance counter. Text overlay: "Você não vai acreditar..." — Suspense music, no dialogue.</div>
+                </div>
+                <div class="scene-duration">0–3s</div>
+              </div>
+              <div class="scene">
+                <div class="scene-number benefit">2</div>
+                <div class="scene-info">
+                  <div class="scene-type benefit">Benefit</div>
+                  <div class="scene-desc">Screen recording of Pix transfer notification arriving. Voiceover: "Com o cashback de 20%, R$80 de volta na minha conta em menos de 24h..."</div>
+                </div>
+                <div class="scene-duration">3–8s</div>
+              </div>
+              <div class="scene">
+                <div class="scene-number benefit">3</div>
+                <div class="scene-info">
+                  <div class="scene-type benefit">Proof</div>
+                  <div class="scene-desc">On-screen text showing real balance with amount blurred + happy reaction face. "Sem risco, sem complicação."</div>
+                </div>
+                <div class="scene-duration">8–13s</div>
+              </div>
+              <div class="scene">
+                <div class="scene-number cta">4</div>
+                <div class="scene-info">
+                  <div class="scene-type cta">CTA</div>
+                  <div class="scene-desc">Product logo + registration button animation. Text: "Cadastre agora. Link na bio." Footer: "Jogue com responsabilidade. +18."</div>
+                </div>
+                <div class="scene-duration">13–18s</div>
+              </div>
+            </div>
+            <div class="blueprint-actions">
+              <button class="btn btn-secondary">✎ Edit Scenes</button>
+              <button class="btn btn-primary">🎬 Send to Studio</button>
+            </div>
+          </div>
+
+          <!-- Blueprint 021 -->
+          <div class="blueprint-card">
+            <div class="blueprint-header">
+              <div class="flex items-center gap-2">
+                <span class="script-id">#021</span>
+                <div class="blueprint-title">Bonus Hunt — Lucky Roulette</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="chip chip-blue">In Studio</span>
+                <span class="text-sm text-secondary">From Script #030</span>
+              </div>
+            </div>
+            <div class="scenes">
+              <div class="scene">
+                <div class="scene-number hook">1</div>
+                <div class="scene-info">
+                  <div class="scene-type hook">Hook</div>
+                  <div class="scene-desc">Fast-cut montage of 7 casino apps being opened then closed. Energy music. Text: "Testei 7 plataformas hoje..."</div>
+                </div>
+                <div class="scene-duration">0–3s</div>
+              </div>
+              <div class="scene">
+                <div class="scene-number benefit">2</div>
+                <div class="scene-info">
+                  <div class="scene-type benefit">Benefit 1</div>
+                  <div class="scene-desc">Roulette spin animation with prize popup. "A roleta da sorte libera prêmios toda semana."</div>
+                </div>
+                <div class="scene-duration">3–9s</div>
+              </div>
+              <div class="scene">
+                <div class="scene-number benefit">3</div>
+                <div class="scene-info">
+                  <div class="scene-type benefit">Benefit 2</div>
+                  <div class="scene-desc">Tournament leaderboard with money amounts. "Membros VIP ainda ganham torneios semanais com premiação real."</div>
+                </div>
+                <div class="scene-duration">9–14s</div>
+              </div>
+              <div class="scene">
+                <div class="scene-number cta">4</div>
+                <div class="scene-info">
+                  <div class="scene-type cta">CTA</div>
+                  <div class="scene-desc">Roulette button with CTA: "Entre pelo link e gire grátis hoje. Novo cadastro." Footer disclaimer.</div>
+                </div>
+                <div class="scene-duration">14–18s</div>
+              </div>
+            </div>
+            <div class="blueprint-actions">
+              <button class="btn btn-secondary">✎ Edit Scenes</button>
+              <button class="btn btn-ghost">📋 Duplicate</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           PAGE: STUDIO
+      ══════════════════════════════════ -->
+      <div class="page" id="page-studio">
+
+        <div class="metric-row">
+          <div class="metric-card">
+            <div class="metric-label">Exported Today</div>
+            <div class="metric-value">247</div>
+            <div class="metric-delta delta-up mt-1">↑ 82% of target</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">In Queue</div>
+            <div class="metric-value">8</div>
+            <div class="metric-delta delta-neutral mt-1">→ ~12 min remaining</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Avg Render Time</div>
+            <div class="metric-value">4.2m</div>
+            <div class="metric-delta delta-up mt-1">↑ -0.8m this week</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Failed</div>
+            <div class="metric-value" style="color:var(--red)">2</div>
+            <div class="metric-delta delta-down mt-1">↓ Needs attention</div>
+          </div>
+        </div>
+
+        <div class="section-header mb-4">
+          <div class="section-title">Render Queue</div>
+          <div class="flex items-center gap-2">
+            <button class="btn btn-ghost">⏸ Pause All</button>
+            <button class="btn btn-primary">▶ Resume</button>
+          </div>
+        </div>
+
+        <div class="studio-queue">
+
+          <div class="studio-item">
+            <div class="studio-thumb">🎬</div>
+            <div class="studio-info">
+              <div class="studio-name">Creative #248 — Big Win Reveal</div>
+              <div class="studio-meta">Script #031 · Blueprint #022 · 18s · 1080p</div>
+            </div>
+            <div class="studio-progress">
+              <div class="studio-progress-label">68%</div>
+              <div class="progress-bar"><div class="progress-fill" style="width:68%"></div></div>
+            </div>
+            <div class="studio-actions">
+              <span class="chip chip-blue">Rendering</span>
+              <button class="btn btn-ghost">⊗</button>
+            </div>
+          </div>
+
+          <div class="studio-item">
+            <div class="studio-thumb">🎬</div>
+            <div class="studio-info">
+              <div class="studio-name">Creative #249 — Bonus Hunt VIP</div>
+              <div class="studio-meta">Script #030 · Blueprint #021 · 18s · 1080p</div>
+            </div>
+            <div class="studio-progress">
+              <div class="studio-progress-label">Queued</div>
+              <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+            </div>
+            <div class="studio-actions">
+              <span class="chip chip-yellow">Queued</span>
+              <button class="btn btn-ghost">⊗</button>
+            </div>
+          </div>
+
+          <div class="studio-item">
+            <div class="studio-thumb">🎬</div>
+            <div class="studio-info">
+              <div class="studio-name">Creative #246 — First Deposit React.</div>
+              <div class="studio-meta">Script #028 · Blueprint #020 · 15s · 1080p</div>
+            </div>
+            <div class="studio-progress">
+              <div class="studio-progress-label">100%</div>
+              <div class="progress-bar"><div class="progress-fill green" style="width:100%"></div></div>
+            </div>
+            <div class="studio-actions">
+              <span class="chip chip-green">Done</span>
+              <button class="btn btn-secondary">⬇ Download</button>
+            </div>
+          </div>
+
+          <div class="studio-item">
+            <div class="studio-thumb">⚠️</div>
+            <div class="studio-info">
+              <div class="studio-name">Creative #244 — Sports Prediction</div>
+              <div class="studio-meta">Script #027 · Render failed — missing compliance disclaimer</div>
+            </div>
+            <div class="studio-progress">
+              <div class="studio-progress-label">Failed</div>
+              <div class="progress-bar"><div class="progress-fill red" style="width:100%"></div></div>
+            </div>
+            <div class="studio-actions">
+              <span class="chip chip-red">Failed</span>
+              <button class="btn btn-secondary">↺ Retry</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div>
+
+<script>
+// ═══════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════
+const pageMeta = {
+  'command-center': {
+    title: 'Command Center',
+    sub: 'System overview — 10 Mar 2026, 14:32',
+    cta: 'Generate Batch'
+  },
+  'sources': {
+    title: 'Sources',
+    sub: 'Data ingestion and competitor monitoring',
+    cta: 'Add Source'
+  },
+  'scripts': {
+    title: 'Scripts',
+    sub: '31 scripts generated today',
+    cta: 'Generate Script'
+  },
+  'templates': {
+    title: 'Templates',
+    sub: '5 active templates · Standard 5-Step selected',
+    cta: 'New Template'
+  },
+  'offers': {
+    title: 'Offers',
+    sub: '8 active product benefits',
+    cta: 'Add Offer'
+  },
+  'blueprint': {
+    title: 'Blueprint',
+    sub: 'Scene structures for video production',
+    cta: 'Generate Blueprint'
+  },
+  'studio': {
+    title: 'Studio',
+    sub: '247 creatives exported · 8 in queue',
+    cta: 'Export All Ready'
+  }
+};
+
+function navigate(page, el) {
+  // Update pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + page);
+  if (target) target.classList.add('active');
+
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) {
+    el.classList.add('active');
+  } else {
+    // Find matching nav item by onclick
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('onclick')?.includes("'" + page + "'")) {
+        n.classList.add('active');
+      }
+    });
+  }
+
+  // Update topbar
+  const meta = pageMeta[page] || {};
+  document.getElementById('topbar-title').textContent = meta.title || page;
+  document.getElementById('topbar-sub').textContent = meta.sub || '';
+  document.getElementById('topbar-cta').innerHTML = `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 01.5.5v3h3a.5.5 0 010 1h-3v3a.5.5 0 01-1 0v-3h-3a.5.5 0 010-1h3v-3A.5.5 0 018 4z"/></svg> ${meta.cta || 'Action'}`;
+}
+
+// Filter tabs
+document.querySelectorAll('.filter-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    this.closest('.filter-tabs').querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// Template selection
+document.querySelectorAll('.template-card').forEach(card => {
+  card.addEventListener('click', function() {
+    document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+    this.classList.add('selected');
+  });
+});
+
+// Offer selection
+document.querySelectorAll('.offer-card').forEach(card => {
+  card.addEventListener('click', function() {
+    this.classList.toggle('active');
+  });
+});
+
+// Theme toggle
+function toggleTheme() {
+  const html = document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+}
+
+function primaryAction() {
+  // placeholder
+  const btn = document.getElementById('topbar-cta');
+  const original = btn.innerHTML;
+  btn.innerHTML = '⏳ Working...';
+  btn.style.opacity = '0.7';
+  setTimeout(() => {
+    btn.innerHTML = original;
+    btn.style.opacity = '1';
+  }, 1800);
+}
+
+// Animate progress bars on load
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    document.querySelectorAll('.progress-fill').forEach(bar => {
+      const w = bar.style.width;
+      bar.style.width = '0%';
+      requestAnimationFrame(() => {
+        setTimeout(() => { bar.style.width = w; }, 80);
+      });
+    });
+  }, 200);
+});
+</script>
+</body>
+</html>
