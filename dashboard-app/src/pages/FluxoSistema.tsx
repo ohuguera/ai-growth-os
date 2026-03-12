@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowRight } from 'lucide-react';
 import { GlassCard, G } from '../design-system';
 import { useMode } from '../store/modeContext';
-import { AGENTS } from '../data/agents';
+
 
 const FlowNode = ({ emoji, label, sublabel, color, agents }: { emoji: string; label: string; sublabel: string; color: string; agents?: string[] }) => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1, minWidth: '140px' }}>

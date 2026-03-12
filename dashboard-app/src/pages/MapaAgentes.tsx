@@ -1,4 +1,4 @@
-import { Activity, ArrowRight, Plus, Zap } from 'lucide-react';
+import { Activity, ArrowRight, Plus } from 'lucide-react';
 import { GlassCard, Badge, G, Btn } from '../design-system';
 import { AGENTS, type AgentDefinition } from '../data/agents';
 import { useMode } from '../store/modeContext';

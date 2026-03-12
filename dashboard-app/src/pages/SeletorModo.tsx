@@ -3,7 +3,7 @@ import { GlassCard, Btn, G } from '../design-system';
 import { useMode, MODE_CONFIG } from '../store/modeContext';
 
 export const SeletorModo = () => {
-  const { mode, setMode, config } = useMode();
+  const { mode, setMode } = useMode();
 
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
