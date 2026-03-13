@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CheckSquare, Square, ExternalLink, Plus, X, Calendar, Clock } from 'lucide-react';
-import { G, GlassCard, Btn } from '../design-system';
+import { G, GlassCard } from '../design-system';
 
 const ASANA_URL = 'https://app.asana.com/';
 
