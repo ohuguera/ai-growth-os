@@ -4,11 +4,20 @@ import {
   Eye, Star, TrendingUp, Zap, Tag,
   FileText, Megaphone, Lightbulb, Type,
   Scissors, Film, Tv,
-  Hash, Gift, Package, Briefcase
+  Hash, Gift, Package, Briefcase,
+  CalendarCheck, ListChecks, PenLine,
 } from 'lucide-react';
 import { useMode } from '../store/modeContext';
 
 export const sidebarSections = [
+  {
+    title: 'MEU DIA',
+    items: [
+      { id: 'hoje',       label: 'Hoje',           icon: CalendarCheck, color: '#0A84FF' },
+      { id: 'producao',   label: 'Produção',        icon: ListChecks,    color: '#30D158' },
+      { id: 'copy_roteiro', label: 'Copy & Roteiro', icon: PenLine,      color: '#FF2D55' },
+    ]
+  },
   {
     title: 'CENTRAL',
     items: [

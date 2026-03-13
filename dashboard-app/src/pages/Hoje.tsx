@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CheckSquare, Square, ExternalLink, Plus, X, Calendar, Clock } from 'lucide-react';
 import { G, GlassCard } from '../design-system';
+import { getDailyProduction, upsertDailyProduction } from '../services/productionService';
 
 const ASANA_URL = 'https://app.asana.com/';
 
@@ -17,6 +18,9 @@ const ENTREGAS_FIXAS = [
   { id: 'asana',    label: 'Upload Card Asana',     grupo: 'upload' },
   { id: 'planilha', label: 'Planilha alimentada',   grupo: 'planilha' },
 ];
+
+const REEL_IDS    = ['reel1', 'reel2', 'capa1', 'capa2'];
+const CRIATIVO_IDS = ['criativo1', 'criativo2', 'criativo3'];
 
 function getTodayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -54,40 +58,53 @@ const GRUPO_LABELS: Record<string, string> = {
 export const Hoje = () => {
   const todayKey = getTodayKey();
   const [hora, setHora] = useState(getHora());
-
-  // Checklist state — persiste por data
-  const [checks, setChecks] = useState<Record<string, boolean>>(() => {
-    try {
-      const saved = localStorage.getItem(`checks_${todayKey}`);
-      return saved ? JSON.parse(saved) : {};
-    } catch { return {}; }
-  });
-
-  // Posts do Asana hoje — persiste por data
+  const [checks, setChecks] = useState<Record<string, boolean>>({});
   const [posts, setPosts] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(`posts_${todayKey}`);
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
-
   const [novoPost, setNovoPost] = useState('');
 
+  // Carrega checks do Supabase ao montar
+  useEffect(() => {
+    getDailyProduction(todayKey).then(record => {
+      if (record?.status) {
+        try {
+          const parsed = JSON.parse(record.status);
+          if (parsed.checks) setChecks(parsed.checks);
+        } catch {}
+      }
+    }).catch(console.error);
+  }, [todayKey]);
+
+  // Relógio
   useEffect(() => {
     const t = setInterval(() => setHora(getHora()), 60000);
     return () => clearInterval(t);
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(`checks_${todayKey}`, JSON.stringify(checks));
-  }, [checks, todayKey]);
-
+  // Salva posts localmente (lista de trabalho do dia)
   useEffect(() => {
     localStorage.setItem(`posts_${todayKey}`, JSON.stringify(posts));
   }, [posts, todayKey]);
 
   const toggleCheck = (id: string) => {
-    setChecks(prev => ({ ...prev, [id]: !prev[id] }));
+    setChecks(prev => {
+      const next = { ...prev, [id]: !prev[id] };
+
+      // Salva no Supabase (fire-and-forget)
+      upsertDailyProduction({
+        date: todayKey,
+        reels_done:     REEL_IDS.filter(i => next[i]).length,
+        criativos_done: CRIATIVO_IDS.filter(i => next[i]).length,
+        cortes_done:    0,
+        status:         JSON.stringify({ checks: next }),
+      }).catch(console.error);
+
+      return next;
+    });
   };
 
   const addPost = () => {
@@ -106,7 +123,6 @@ export const Hoje = () => {
   const progresso = Math.round((feitas / total) * 100);
   const diaFechado = feitas === total;
 
-  // Agrupar entregas
   const grupos = Array.from(new Set(ENTREGAS_FIXAS.map(e => e.grupo)));
 
   return (
@@ -165,7 +181,7 @@ export const Hoje = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
 
-        {/* Planejamento do dia — Asana */}
+        {/* Posts do dia — Asana */}
         <GlassCard style={{ padding: '20px', borderRadius: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -185,7 +201,6 @@ export const Hoje = () => {
             </button>
           </div>
 
-          {/* Lista de posts */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
             {posts.length === 0 && (
               <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '12px', textAlign: 'center', padding: '16px 0' }}>
@@ -205,7 +220,6 @@ export const Hoje = () => {
             ))}
           </div>
 
-          {/* Input novo post */}
           <div style={{ display: 'flex', gap: '8px' }}>
             <input
               value={novoPost}
@@ -236,10 +250,10 @@ export const Hoje = () => {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {[
-              { label: 'Reels + Capas', total: 4, feitas: ['reel1','reel2','capa1','capa2'].filter(id => checks[id]).length, cor: G.colors.primary },
-              { label: 'Criativos', total: 3, feitas: ['criativo1','criativo2','criativo3'].filter(id => checks[id]).length, cor: G.colors.secondary },
-              { label: 'Copy & Roteiro', total: 1, feitas: checks['copy'] ? 1 : 0, cor: G.colors.copy },
-              { label: 'Uploads & Planilha', total: 3, feitas: ['drive','asana','planilha'].filter(id => checks[id]).length, cor: G.colors.success },
+              { label: 'Reels + Capas',    total: 4, feitas: REEL_IDS.filter(id => checks[id]).length,     cor: G.colors.primary },
+              { label: 'Criativos',         total: 3, feitas: CRIATIVO_IDS.filter(id => checks[id]).length, cor: G.colors.secondary },
+              { label: 'Copy & Roteiro',    total: 1, feitas: checks['copy'] ? 1 : 0,                       cor: G.colors.copy },
+              { label: 'Uploads & Planilha',total: 3, feitas: ['drive','asana','planilha'].filter(id => checks[id]).length, cor: G.colors.success },
             ].map(item => (
               <div key={item.label}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>

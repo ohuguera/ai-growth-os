@@ -17,12 +17,16 @@ import { ConcorrentesIGaming } from './pages/ConcorrentesIGaming';
 import { GrandesMarcas } from './pages/GrandesMarcas';
 import { RadarTendencias } from './pages/RadarTendencias';
 import { CalendarioCampanhas } from './pages/CalendarioCampanhas';
+import { Hoje } from './pages/Hoje';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import './index.css';
 
 // --- CONFIGURAÇÃO DE PÁGINAS ---
 
 const pageConfig: Record<string, { title: string; description: string }> = {
+  hoje:          { title: 'Hoje',          description: 'Checklist de entregas do dia e planejamento.' },
+  producao:      { title: 'Produção',      description: 'Controle das linhas de produção e cortes.' },
+  copy_roteiro:  { title: 'Copy & Roteiro', description: 'Geração de copy com estrutura Hook + Dev + CTA.' },
   central:           { title: 'Central de Controle',      description: 'Visão geral em tempo real da operação.' },
   agentes:           { title: 'Mapa de Agentes',           description: 'Monitore todos os agentes e o organograma.' },
   fluxo:             { title: 'Fluxo do Sistema',          description: 'Visualize como os dados fluem desde a fonte até o output.' },
@@ -75,7 +79,7 @@ const colorMap: Record<string, string> = {
   hooks: G.colors.primary, lib_ofertas: G.colors.warning, templates: G.colors.secondary, portfolio: G.colors.success,
 };
 
-const specialPages = ['central', 'agentes', 'fluxo', 'seletor', 'concorrentes', 'grandes_marcas', 'radar_videos'];
+const specialPages = ['hoje', 'central', 'agentes', 'fluxo', 'seletor', 'concorrentes', 'grandes_marcas', 'radar_videos'];
 
 // --- APP INTERNO (dentro do ModeProvider) ---
 
@@ -123,6 +127,7 @@ function AppInner() {
             </header>
 
             {/* Páginas construídas */}
+            {activeTab === 'hoje'         && <Hoje />}
             {activeTab === 'central'      && <CentralControle />}
             {activeTab === 'agentes'      && <MapaAgentes />}
             {activeTab === 'fluxo'        && <FluxoSistema />}
