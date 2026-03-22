@@ -1,11 +1,48 @@
 import { useState } from 'react';
-import { TrendingUp, Flame, Target, Radio, FileText, Megaphone, Sparkles, CircleDashed, Activity } from 'lucide-react';
+import { TrendingUp, Flame, Target, Radio, FileText, Megaphone, Sparkles, CircleDashed, Activity, Check } from 'lucide-react';
 import { G, GlassCard, Badge, Btn } from '../design-system';
 import { trends, type Trend } from '../data/trends';
+import type { Hook, Template } from '../types/creative-blocks';
+import { loadBlocks, saveBlocks, BLOCK_KEYS, gerarId } from '../types/creative-blocks';
 
 const TrendCard = ({ trend }: { trend: Trend }) => {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded]   = useState(false);
+  const [hookSalvo, setHookSalvo] = useState(false);
+  const [tmplSalvo, setTmplSalvo] = useState(false);
   const PIcon = trend.platformIcon;
+
+  function salvarHook() {
+    if (hookSalvo) return;
+    const hooks = loadBlocks<Hook>(BLOCK_KEYS.hooks);
+    const novo: Hook = {
+      id: gerarId(),
+      hook_text: trend.hook,
+      hook_type: 'curiosidade',
+      status: 'draft',
+      source: 'radar',
+      created_at: new Date().toISOString(),
+    };
+    saveBlocks(BLOCK_KEYS.hooks, [novo, ...hooks]);
+    setHookSalvo(true);
+  }
+
+  function salvarTemplate() {
+    if (tmplSalvo) return;
+    const templates = loadBlocks<Template>(BLOCK_KEYS.templates);
+    const novo: Template = {
+      id: gerarId(),
+      title: `${trend.name} — Radar`,
+      template_type: 'prova_social',
+      line_type: trend.platform === 'YouTube Shorts' ? 'L3' : trend.platform === 'TikTok' ? 'L2' : 'L1',
+      structure: trend.suggestedFormat,
+      notes: `${trend.adaptation} | Funil: ${trend.campaignUse}`,
+      status: 'draft',
+      source: 'radar',
+      created_at: new Date().toISOString(),
+    };
+    saveBlocks(BLOCK_KEYS.templates, [novo, ...templates]);
+    setTmplSalvo(true);
+  }
 
   return (
     <GlassCard style={{ padding: '20px', border: `1px solid ${trend.platformColor}25` }}>
@@ -59,8 +96,8 @@ const TrendCard = ({ trend }: { trend: Trend }) => {
       {/* Actions */}
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <Btn icon={expanded ? CircleDashed : Sparkles} label={expanded ? 'Recolher' : 'Ver Detalhes'} variant="dark" small onClick={() => setExpanded(!expanded)} />
-        <Btn icon={FileText} label="Gerar Roteiro" variant="primary" small />
-        <Btn icon={Megaphone} label="Criar Campanha" variant="purple" small />
+        <Btn icon={hookSalvo ? Check : FileText} label={hookSalvo ? 'Hook Salvo' : 'Salvar Hook'} variant="primary" small onClick={salvarHook} />
+        <Btn icon={tmplSalvo ? Check : Megaphone} label={tmplSalvo ? 'Template Criado' : 'Criar Template'} variant="purple" small onClick={salvarTemplate} />
       </div>
     </GlassCard>
   );

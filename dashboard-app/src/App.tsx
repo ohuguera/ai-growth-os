@@ -18,6 +18,29 @@ import { GrandesMarcas } from './pages/GrandesMarcas';
 import { RadarTendencias } from './pages/RadarTendencias';
 import { CalendarioCampanhas } from './pages/CalendarioCampanhas';
 import { Hoje } from './pages/Hoje';
+import { CortesLive } from './pages/CortesLive';
+import { Producao } from './pages/Producao';
+import { CopyRoteiro } from './pages/CopyRoteiro';
+import { BancoHooks } from './pages/BancoHooks';
+import { BibliotecaOfertas } from './pages/BibliotecaOfertas';
+import { Templates } from './pages/Templates';
+import { ClipesGerados } from './pages/ClipesGerados';
+import { PortfolioCriativo } from './pages/PortfolioCriativo';
+import { HooksEmAlta } from './pages/HooksEmAlta';
+import { OfertasEmAlta } from './pages/OfertasEmAlta';
+import { FormatosEmAlta } from './pages/FormatosEmAlta';
+import { CortadorIA } from './pages/CortadorIA';
+import { AgenteRevisao } from './pages/AgenteRevisao';
+import { GeradorRoteiros } from './pages/GeradorRoteiros';
+import { IdeiasCampanha } from './pages/IdeiasCampanha';
+import { IdeiasFormato } from './pages/IdeiasFormato';
+import { SugestoesCopy } from './pages/SugestoesCopy';
+import { FontesMonitoradas } from './pages/FontesMonitoradas';
+import { ModoIGaming } from './pages/ModoIGaming';
+import { ModoGrandesMarcas } from './pages/ModoGrandesMarcas';
+import { EditorVideos } from './pages/EditorVideos';
+import { BibliotecaAnuncios } from './pages/BibliotecaAnuncios';
+import { SugestoesFormatos } from './pages/SugestoesFormatos';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import './index.css';
 
@@ -47,12 +70,14 @@ const pageConfig: Record<string, { title: string; description: string }> = {
   formato:           { title: 'Ideias de Formato',         description: 'Formatos adaptados para cada plataforma.' },
   copy:              { title: 'Sugestões de Copy',         description: 'Textos e legendas gerados pela IA.' },
   cortes:            { title: 'Cortes de Live',            description: 'Cortes automáticos dos melhores momentos.' },
+  cortador_ia:       { title: 'Cortador IA',               description: 'Envie uma live e a IA detecta, pontua e corta os melhores momentos automaticamente.' },
   editor:            { title: 'Editor de Vídeo',           description: 'Edite e monte criativos em vídeo.' },
   clipes:            { title: 'Clipes Gerados',            description: 'Biblioteca de clipes prontos para publicar.' },
   hooks:             { title: 'Hooks',                     description: 'Banco de hooks validados por funil.' },
   lib_ofertas:       { title: 'Ofertas',                   description: 'Catálogo de ofertas prontas.' },
   templates:         { title: 'Templates',                  description: 'Templates de criativos e roteiros.' },
   portfolio:         { title: 'Portfólio Criativo',        description: 'Todo o material produzido organizado.' },
+  agente_revisao:    { title: 'Agente de Revisao',          description: 'Dashboard de saude do sistema com diagnostico automatizado e proximas acoes.' },
 };
 
 const iconMap: Record<string, any> = {
@@ -79,7 +104,7 @@ const colorMap: Record<string, string> = {
   hooks: G.colors.primary, lib_ofertas: G.colors.warning, templates: G.colors.secondary, portfolio: G.colors.success,
 };
 
-const specialPages = ['hoje', 'central', 'agentes', 'fluxo', 'seletor', 'concorrentes', 'grandes_marcas', 'radar_videos'];
+const specialPages = ['hoje', 'producao', 'copy_roteiro', 'hooks', 'lib_ofertas', 'templates', 'clipes', 'portfolio', 'central', 'agentes', 'fluxo', 'seletor', 'concorrentes', 'grandes_marcas', 'radar_videos', 'biblioteca_anuncios', 'cortes', 'cortador_ia', 'editor', 'hooks_alta', 'ofertas_alta', 'formatos_alta', 'agente_revisao', 'roteiros', 'campanha', 'formato', 'copy', 'fontes', 'modo_igaming', 'modo_marcas', 'sugestoes_formatos'];
 
 // --- APP INTERNO (dentro do ModeProvider) ---
 
@@ -128,6 +153,11 @@ function AppInner() {
 
             {/* Páginas construídas */}
             {activeTab === 'hoje'         && <Hoje />}
+            {activeTab === 'producao'     && <Producao />}
+            {activeTab === 'copy_roteiro' && <CopyRoteiro />}
+            {activeTab === 'hooks'        && <BancoHooks />}
+            {activeTab === 'lib_ofertas'  && <BibliotecaOfertas />}
+            {activeTab === 'templates'    && <Templates />}
             {activeTab === 'central'      && <CentralControle />}
             {activeTab === 'agentes'      && <MapaAgentes />}
             {activeTab === 'fluxo'        && <FluxoSistema />}
@@ -136,6 +166,24 @@ function AppInner() {
             {activeTab === 'grandes_marcas' && <GrandesMarcas />}
             {activeTab === 'radar_videos' && <RadarTendencias />}
             {activeTab === 'calendario'   && <CalendarioCampanhas />}
+            {activeTab === 'cortes'       && <CortesLive />}
+            {activeTab === 'cortador_ia'  && <CortadorIA />}
+            {activeTab === 'editor'       && <EditorVideos />}
+            {activeTab === 'clipes'       && <ClipesGerados />}
+            {activeTab === 'portfolio'    && <PortfolioCriativo />}
+            {activeTab === 'hooks_alta'   && <HooksEmAlta />}
+            {activeTab === 'ofertas_alta'  && <OfertasEmAlta />}
+            {activeTab === 'formatos_alta' && <FormatosEmAlta />}
+            {activeTab === 'agente_revisao' && <AgenteRevisao />}
+            {activeTab === 'roteiros'      && <GeradorRoteiros />}
+            {activeTab === 'campanha'      && <IdeiasCampanha />}
+            {activeTab === 'formato'       && <IdeiasFormato />}
+            {activeTab === 'copy'          && <SugestoesCopy />}
+            {activeTab === 'fontes'        && <FontesMonitoradas />}
+            {activeTab === 'modo_igaming'        && <ModoIGaming />}
+            {activeTab === 'modo_marcas'          && <ModoGrandesMarcas />}
+            {activeTab === 'biblioteca_anuncios'  && <BibliotecaAnuncios />}
+            {activeTab === 'sugestoes_formatos'   && <SugestoesFormatos />}
 
             {/* Placeholders */}
             {!isSpecialPage && activeTab !== 'calendario' && iconMap[activeTab] && (
