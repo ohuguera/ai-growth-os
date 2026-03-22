@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   LayoutDashboard, Map, GitBranch, Sliders,
   Video, Library, Wifi, Layers,
@@ -6,6 +7,7 @@ import {
   Scissors, Film, Tv,
   Hash, Gift, Package, Briefcase,
   CalendarCheck, ListChecks, PenLine,
+  Bot, ChevronDown,
 } from 'lucide-react';
 import { useMode } from '../store/modeContext';
 
@@ -66,6 +68,7 @@ export const sidebarSections = [
     title: 'PRODUÇÃO',
     items: [
       { id: 'cortes', label: 'Cortes de Live', icon: Scissors, color: '#FF2D55' },
+      { id: 'cortador_ia', label: 'Cortador IA', icon: Zap, color: '#BF5AF2' },
       { id: 'editor', label: 'Editor de Vídeo', icon: Film, color: '#0A84FF' },
       { id: 'clipes', label: 'Clipes Gerados', icon: Tv, color: '#30D158' },
     ]
@@ -79,10 +82,45 @@ export const sidebarSections = [
       { id: 'portfolio', label: 'Portfólio Criativo', icon: Briefcase, color: '#32D74B' },
     ]
   },
+  {
+    title: 'SISTEMA',
+    items: [
+      { id: 'agente_revisao', label: 'Agente de Revisao', icon: Bot, color: '#BF5AF2' },
+    ]
+  },
 ];
+
+// Seções abertas por padrão ao carregar
+const DEFAULT_OPEN = new Set(['MEU DIA']);
 
 export const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string; setActiveTab: (t: string) => void }) => {
   const { mode, config } = useMode();
+
+  // Abre automaticamente a seção que contém a aba ativa
+  const activeSection = sidebarSections.find(s => s.items.some(i => i.id === activeTab))?.title;
+  const [openSections, setOpenSections] = useState<Set<string>>(() => {
+    const initial = new Set(DEFAULT_OPEN);
+    if (activeSection) initial.add(activeSection);
+    return initial;
+  });
+
+  function toggleSection(title: string) {
+    setOpenSections(prev => {
+      const next = new Set(prev);
+      if (next.has(title)) next.delete(title);
+      else next.add(title);
+      return next;
+    });
+  }
+
+  // Quando a aba ativa muda, garante que a seção dela está aberta
+  const handleNavClick = (id: string, sectionTitle: string) => {
+    setOpenSections(prev => {
+      if (prev.has(sectionTitle)) return prev;
+      return new Set([...prev, sectionTitle]);
+    });
+    setActiveTab(id);
+  };
 
   return (
     <aside style={{
@@ -101,39 +139,73 @@ export const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string; setAct
       </div>
 
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        {sidebarSections.map(section => (
-          <div key={section.title}>
-            <div style={{
-              fontSize: '9px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)',
-              fontWeight: '700', letterSpacing: '1.5px', marginTop: '18px', marginBottom: '4px',
-              paddingLeft: '10px',
-            }}>
-              {section.title}
-            </div>
-            {section.items.map(item => {
-              const modeOnly = (item as any).modeOnly;
-              if (modeOnly && modeOnly !== mode) return null;
-              const isActive = activeTab === item.id;
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '10px',
-                    padding: '9px 12px', borderRadius: '8px', cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    borderLeft: isActive ? `3px solid ${item.color}` : '3px solid transparent',
-                    color: isActive ? '#fff' : 'rgba(255,255,255,0.45)',
-                    background: isActive ? `${item.color}12` : 'transparent',
-                  }}
-                >
-                  <item.icon size={14} color={isActive ? item.color : undefined} />
-                  <span style={{ fontSize: '12px', fontWeight: isActive ? '600' : '500' }}>{item.label}</span>
+        {sidebarSections.map(section => {
+          const isOpen = openSections.has(section.title);
+          // Conta quantos itens visíveis (respeitando modeOnly)
+          const visibleItems = section.items.filter(i => {
+            const modeOnly = (i as any).modeOnly;
+            return !modeOnly || modeOnly === mode;
+          });
+          // Verifica se algum item desta seção está ativo
+          const hasActive = visibleItems.some(i => i.id === activeTab);
+
+          return (
+            <div key={section.title} style={{ marginTop: '6px' }}>
+              {/* Cabeçalho clicável da seção */}
+              <button
+                type="button"
+                onClick={() => toggleSection(section.title)}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '7px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                  background: hasActive
+                    ? 'rgba(255,255,255,0.06)'
+                    : isOpen ? 'rgba(255,255,255,0.03)' : 'transparent',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <span style={{
+                  fontSize: '9px', textTransform: 'uppercase',
+                  color: hasActive ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)',
+                  fontWeight: '700', letterSpacing: '1.5px',
+                }}>
+                  {section.title}
+                </span>
+                <ChevronDown
+                  size={12}
+                  color={hasActive ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)'}
+                  style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+                />
+              </button>
+
+              {/* Itens da seção (colapsáveis) */}
+              {isOpen && (
+                <div style={{ marginTop: '2px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                  {visibleItems.map(item => {
+                    const isActive = activeTab === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => handleNavClick(item.id, section.title)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '10px',
+                          padding: '8px 12px', borderRadius: '8px', cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          borderLeft: isActive ? `3px solid ${item.color}` : '3px solid transparent',
+                          color: isActive ? '#fff' : 'rgba(255,255,255,0.45)',
+                          background: isActive ? `${item.color}12` : 'transparent',
+                        }}
+                      >
+                        <item.icon size={14} color={isActive ? item.color : undefined} />
+                        <span style={{ fontSize: '12px', fontWeight: isActive ? '600' : '500' }}>{item.label}</span>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
-        ))}
+              )}
+            </div>
+          );
+        })}
       </nav>
     </aside>
   );

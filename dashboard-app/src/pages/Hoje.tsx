@@ -55,6 +55,83 @@ const GRUPO_LABELS: Record<string, string> = {
   planilha:  'PLANILHA',
 };
 
+// --- Producao de Hoje (L1/L2/L3 do localStorage) ---
+
+const METAS = { L1: 2, L2: 2, L3: 1 };
+
+interface ProdItem {
+  linha?: string;
+  concluido?: boolean;
+}
+
+function ProducaoHoje({ todayKey }: { todayKey: string }) {
+  const [contadores, setContadores] = useState({ L1: 0, L2: 0, L3: 0 });
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`production_items_${todayKey}`);
+      if (!raw) return;
+      const items: ProdItem[] = JSON.parse(raw);
+      const counts = { L1: 0, L2: 0, L3: 0 };
+      items.forEach(item => {
+        if (item.concluido && item.linha) {
+          const key = item.linha.toUpperCase() as keyof typeof counts;
+          if (key in counts) counts[key]++;
+        }
+      });
+      setContadores(counts);
+    } catch { /* ignore */ }
+  }, [todayKey]);
+
+  const linhas = [
+    { key: 'L1' as const, label: 'L1 - Cortes/Reels', cor: G.colors.primary },
+    { key: 'L2' as const, label: 'L2 - Criativos', cor: G.colors.secondary },
+    { key: 'L3' as const, label: 'L3 - Storytelling', cor: '#BF5AF2' },
+  ];
+
+  const totalFeito = contadores.L1 + contadores.L2 + contadores.L3;
+  const totalMeta = METAS.L1 + METAS.L2 + METAS.L3;
+
+  return (
+    <GlassCard style={{ padding: '20px', borderRadius: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div style={{ fontWeight: '700', fontSize: '13px', letterSpacing: '1px' }}>
+          PRODUCAO DE HOJE
+        </div>
+        <div style={{ fontSize: '18px', fontWeight: '900', color: totalFeito >= totalMeta ? G.colors.success : G.colors.warning }}>
+          {totalFeito}/{totalMeta}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '12px' }}>
+        {linhas.map(l => {
+          const feito = contadores[l.key];
+          const meta = METAS[l.key];
+          const pct = meta > 0 ? Math.round((feito / meta) * 100) : 0;
+          return (
+            <div key={l.key} style={{ flex: 1, textAlign: 'center' }}>
+              <div style={{
+                fontSize: '28px', fontWeight: '900',
+                color: feito >= meta ? l.cor : 'rgba(255,255,255,0.3)',
+              }}>
+                {feito}
+              </div>
+              <div style={{ fontSize: '10px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', marginBottom: '6px' }}>
+                /{meta} {l.label}
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '4px', height: '4px' }}>
+                <div style={{
+                  width: `${Math.min(pct, 100)}%`, height: '100%',
+                  background: l.cor, borderRadius: '4px', transition: 'width 0.3s',
+                }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </GlassCard>
+  );
+}
+
 export const Hoje = () => {
   const todayKey = getTodayKey();
   const [hora, setHora] = useState(getHora());
@@ -273,6 +350,9 @@ export const Hoje = () => {
           </div>
         </GlassCard>
       </div>
+
+      {/* Producao de Hoje — L1/L2/L3 */}
+      <ProducaoHoje todayKey={todayKey} />
 
       {/* Checklist de Entregas */}
       <GlassCard style={{ padding: '24px', borderRadius: '16px' }}>
