@@ -22,9 +22,6 @@ COPY cortador-backend/ .
 # Diretórios de trabalho
 RUN mkdir -p uploads outputs jobs
 
-# Pré-baixa modelo Whisper no build (evita download na primeira request)
-RUN python -c "import whisper; whisper.load_model('base')"
-
 EXPOSE 8000
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
