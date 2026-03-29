@@ -10,10 +10,7 @@ WORKDIR /app
 # Copia requirements do cortador-backend
 COPY cortador-backend/requirements.txt .
 
-# PyTorch CPU (menor, suficiente para Whisper base)
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-
-# Demais dependências
+# Instala dependências (faster-whisper usa ctranslate2, não precisa de torch)
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copia código do cortador-backend
