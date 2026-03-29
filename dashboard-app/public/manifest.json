@@ -1,0 +1,18 @@
+{
+  "name": "HFIVE IA",
+  "short_name": "HFIVE IA",
+  "description": "Sistema de cortes inteligentes para iGaming",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#38BDF8",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
