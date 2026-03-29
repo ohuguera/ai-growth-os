@@ -22,4 +22,5 @@ RUN mkdir -p uploads outputs jobs
 EXPOSE 8000
 
 ARG CACHEBUST=2
+LABEL version="2"
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
