@@ -5,6 +5,7 @@ import {
   Captions, Scissors, Mic, Maximize2, Film, Zap, Sparkles, Check, Wand2,
 } from 'lucide-react'
 import { uploadVideoChunked, startTranscription } from '../services/api'
+import { colors, glow, radius, transition } from '../styles/theme'
 import type { Live, JobStatus, Page, PresetId } from '../types'
 import { EXPERTS, PRESETS } from '../data/experts'
 import RecorteIA from './RecorteIA'
@@ -140,10 +141,10 @@ export default function Inbox({ navigate }: Props) {
       }}>
         {/* Logo mark */}
         <div style={{
-          width: 28, height: 28, borderRadius: 8, marginBottom: 20,
-          background: 'linear-gradient(135deg, #38BDF8, #F472B6)',
+          width: 28, height: 28, borderRadius: radius.md, marginBottom: 20,
+          background: `linear-gradient(135deg, ${colors.primary}, ${colors.alert})`,
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
-          boxShadow: '0 0 12px rgba(56,189,248,0.3)',
+          boxShadow: glow.cyanSoft,
         }}>✂</div>
 
         {/* Nav top */}
@@ -156,9 +157,9 @@ export default function Inbox({ navigate }: Props) {
               style={{
                 width: 36, height: 36, borderRadius: 8,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: activeNav === n.id ? 'rgba(56,189,248,0.1)' : 'transparent',
-                border: activeNav === n.id ? '1px solid rgba(56,189,248,0.25)' : '1px solid transparent',
-                color: activeNav === n.id ? '#38BDF8' : '#444',
+                background: activeNav === n.id ? colors.primaryMuted : 'transparent',
+                border: activeNav === n.id ? `1px solid color-mix(in srgb, ${colors.primary} 25%, transparent)` : '1px solid transparent',
+                color: activeNav === n.id ? colors.primary : '#444',
                 transition: 'all 0.12s', cursor: 'pointer',
               }}
             >
@@ -209,15 +210,17 @@ export default function Inbox({ navigate }: Props) {
 
           {/* ── UPLOAD CARD ── */}
           <div
+            className="cyber-card"
             onDrop={onDrop}
             onDragOver={e => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}
             style={{
               maxWidth: 520, margin: '0 auto 40px',
-              background: dragging ? '#141420' : '#111111',
-              border: `1px solid ${dragging ? '#38BDF8' : '#222'}`,
-              borderRadius: 16, padding: '20px', boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
-              transition: 'all 0.15s',
+              background: dragging ? colors.bgSurface : colors.bgCard,
+              border: `1px solid ${dragging ? colors.primary : colors.border}`,
+              borderRadius: 16, padding: '20px',
+              boxShadow: dragging ? glow.cyanSoft : '0 8px 40px rgba(0,0,0,0.6)',
+              transition: transition.cyber,
             }}
           >
             {/* URL / Arquivo selecionado */}
@@ -301,15 +304,16 @@ export default function Inbox({ navigate }: Props) {
             {/* Progress bar durante upload */}
             {uploading && (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#555', marginBottom: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: colors.textMuted, marginBottom: 6 }}>
                   <span>{uploadPct < 100 ? 'Enviando vídeo...' : 'Iniciando análise...'}</span>
-                  <span>{Math.round(uploadPct)}%</span>
+                  <span style={{ color: colors.primary }}>{Math.round(uploadPct)}%</span>
                 </div>
-                <div style={{ height: 3, background: '#1a1a1a', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: 3, background: colors.bgElevated, borderRadius: 2, overflow: 'hidden' }}>
                   <div style={{
                     height: '100%', borderRadius: 2,
-                    background: 'linear-gradient(90deg, #38BDF8, #F472B6)',
+                    background: `linear-gradient(90deg, ${colors.primary}, ${colors.alert})`,
                     width: `${uploadPct}%`, transition: 'width 0.3s ease',
+                    boxShadow: glow.cyanSoft,
                   }} />
                 </div>
               </div>
@@ -326,17 +330,17 @@ export default function Inbox({ navigate }: Props) {
               <button
                 onClick={() => setShowRecorteIA(true)}
                 style={{
-                  width: '100%', padding: '11px', borderRadius: 10, marginBottom: 8,
-                  background: 'linear-gradient(135deg, rgba(56,189,248,0.12), rgba(244,114,182,0.08))',
-                  border: '1px solid rgba(56,189,248,0.3)',
-                  color: '#38BDF8', fontWeight: 700, fontSize: 13,
+                  width: '100%', padding: '11px', borderRadius: radius.lg, marginBottom: 8,
+                  background: colors.primaryMuted,
+                  border: `1px solid color-mix(in srgb, ${colors.primary} 30%, transparent)`,
+                  color: colors.primary, fontWeight: 700, fontSize: 13,
                   cursor: 'pointer', letterSpacing: '-0.1px',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  boxShadow: '0 0 16px rgba(56,189,248,0.1)',
-                  transition: 'all 0.2s',
+                  boxShadow: glow.cyanSoft,
+                  transition: transition.cyber,
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 24px rgba(56,189,248,0.2)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 16px rgba(56,189,248,0.1)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = glow.cyan }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = glow.cyanSoft }}
               >
                 <Wand2 size={14} />
                 Recorte de IA — descreva o que quer cortar
@@ -348,14 +352,17 @@ export default function Inbox({ navigate }: Props) {
               onClick={handleCta}
               disabled={uploading}
               style={{
-                width: '100%', padding: '13px', borderRadius: 10,
-                background: uploading ? '#1a1a1a' : '#fff',
-                color: uploading ? '#555' : '#000',
+                width: '100%', padding: '13px', borderRadius: radius.cyber,
+                background: uploading ? colors.bgElevated : colors.primary,
+                color: uploading ? colors.textMuted : '#000',
                 fontWeight: 800, fontSize: 15, border: 'none',
                 cursor: uploading ? 'not-allowed' : 'pointer',
-                letterSpacing: '-0.2px', transition: 'all 0.2s',
+                letterSpacing: '-0.2px', transition: transition.cyber,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                boxShadow: uploading ? 'none' : glow.cyanSoft,
               }}
+              onMouseEnter={e => { if (!uploading) (e.currentTarget as HTMLButtonElement).style.boxShadow = glow.cyan }}
+              onMouseLeave={e => { if (!uploading) (e.currentTarget as HTMLButtonElement).style.boxShadow = glow.cyanSoft }}
             >
               {uploading ? (
                 <>
