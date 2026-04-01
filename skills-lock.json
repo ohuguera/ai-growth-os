@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "dev-browser": {
+      "source": "sawyerhood/dev-browser",
+      "sourceType": "github",
+      "computedHash": "852a5a8415f19de7512f00dcfe0640711a4790e2165ff806f4d3e75c5e7c5199"
+    }
+  }
+}

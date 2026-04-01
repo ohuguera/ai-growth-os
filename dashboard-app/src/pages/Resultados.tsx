@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   LayoutGrid, List, Search, CheckSquare, Filter,
   ArrowUpDown, Download, X, Sliders, Calendar, Zap, Sparkles, Loader2,
+  PlayCircle, Volume2, VolumeX, Maximize2,
 } from 'lucide-react'
 import { getJob, downloadUrl } from '../services/api'
 import { EXPERTS } from '../data/experts'
@@ -54,6 +55,9 @@ export default function Resultados({ jobId, expertId, liveTitle, navigate }: Pro
   const [selecting, setSelecting] = useState(false)
   const [skillResults, setSkillResults] = useState<Record<string, { hook?: string; legenda?: string; titulo?: string }>>({})
   const [skillLoading, setSkillLoading] = useState<Record<string, string>>({}) // clipId → skill
+  const [previewClip, setPreviewClip] = useState<Clip | null>(null)
+  const [videoMuted, setVideoMuted] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     getJob(jobId)
@@ -61,6 +65,14 @@ export default function Resultados({ jobId, expertId, liveTitle, navigate }: Pro
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [jobId])
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setPreviewClip(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   function getMoment(clip: Clip): Moment | undefined {
     return moments.find(m => Math.abs(m.start - clip.start) < 1)
@@ -104,8 +116,277 @@ export default function Resultados({ jobId, expertId, liveTitle, navigate }: Pro
     }
   }
 
+  const previewMoment = previewClip ? getMoment(previewClip) : null
+  const previewDs = previewClip ? displayScore(previewClip.score) : 0
+  const previewColor = previewClip ? scoreColor(previewClip.score) : '#22C55E'
+  const previewIdx = previewClip ? displayed.findIndex(c => c.id === previewClip.id) : -1
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#080808' }}>
+
+    {/* ── VIDEO PREVIEW MODAL ── */}
+    {previewClip && (
+      <div
+        onClick={e => { if (e.target === e.currentTarget) setPreviewClip(null) }}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.88)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: 24, padding: '24px 32px',
+        }}
+      >
+        {/* Prev clip */}
+        {previewIdx > 0 && (
+          <button
+            onClick={() => setPreviewClip(displayed[previewIdx - 1])}
+            style={{
+              background: 'rgba(255,255,255,0.07)', border: '1px solid #333',
+              borderRadius: 8, color: '#aaa', fontSize: 22, width: 40, height: 40,
+              cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >‹</button>
+        )}
+
+        {/* Video container 9:16 */}
+        <div style={{
+          height: 'min(80vh, 540px)',
+          aspectRatio: '9/16',
+          background: '#000', borderRadius: 14, overflow: 'hidden',
+          position: 'relative', flexShrink: 0,
+          boxShadow: `0 0 60px ${previewColor}30`,
+          border: `1px solid ${previewColor}40`,
+        }}>
+          <video
+            ref={videoRef}
+            src={downloadUrl(previewClip.id)}
+            autoPlay
+            muted={videoMuted}
+            controls={false}
+            playsInline
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+
+          {/* Controls overlay */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+            padding: '20px 12px 10px',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <button
+              onClick={() => {
+                if (videoRef.current) {
+                  videoRef.current.paused ? videoRef.current.play() : videoRef.current.pause()
+                }
+              }}
+              style={{
+                background: 'rgba(255,255,255,0.15)', border: 'none',
+                borderRadius: 6, color: '#fff', width: 30, height: 30,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <PlayCircle size={16} />
+            </button>
+            <button
+              onClick={() => setVideoMuted(m => !m)}
+              style={{
+                background: 'rgba(255,255,255,0.15)', border: 'none',
+                borderRadius: 6, color: '#fff', width: 30, height: 30,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              {videoMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+            </button>
+            <a
+              href={downloadUrl(previewClip.id)}
+              download={`clip_${previewIdx + 1}.mp4`}
+              style={{
+                marginLeft: 'auto', background: 'rgba(255,255,255,0.15)', border: 'none',
+                borderRadius: 6, color: '#fff', width: 30, height: 30,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <Download size={14} />
+            </a>
+            <button
+              onClick={() => videoRef.current?.requestFullscreen?.()}
+              style={{
+                background: 'rgba(255,255,255,0.15)', border: 'none',
+                borderRadius: 6, color: '#fff', width: 30, height: 30,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <Maximize2 size={14} />
+            </button>
+          </div>
+        </div>
+
+        {/* Info panel */}
+        <div style={{
+          width: 280, display: 'flex', flexDirection: 'column', gap: 16,
+          alignSelf: 'center',
+        }}>
+          {/* Score */}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <span style={{ fontSize: 56, fontWeight: 900, color: previewColor, lineHeight: 1 }}>
+              {previewDs}
+            </span>
+            <span style={{ fontSize: 14, color: '#555', fontWeight: 600 }}>/ 99</span>
+          </div>
+
+          {/* Timecode */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <span style={{
+              padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
+              background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#666',
+            }}>
+              {fmtTime(previewClip.start)} → {fmtTime(previewClip.end)}
+            </span>
+            <span style={{
+              padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
+              background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#666',
+            }}>
+              {fmtDuration(previewClip.start, previewClip.end)}
+            </span>
+          </div>
+
+          {/* Score breakdown */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[
+              { label: 'Hook', value: Math.round(previewDs * 0.35), color: '#38BDF8' },
+              { label: 'Emoção', value: Math.round(previewDs * 0.30), color: '#F472B6' },
+              { label: 'Tensão', value: Math.round(previewDs * 0.20), color: '#FB923C' },
+              { label: 'Trend', value: Math.round(previewDs * 0.15), color: '#A78BFA' },
+            ].map(({ label, value, color }) => (
+              <div key={label}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                  <span style={{ fontSize: 11, color: '#555' }}>{label}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color }}>{value}</span>
+                </div>
+                <div style={{ height: 3, background: '#1a1a1a', borderRadius: 2 }}>
+                  <div style={{
+                    height: 3, borderRadius: 2, background: color,
+                    width: `${Math.min(100, Math.round((value / 99) * 100))}%`,
+                    transition: 'width 0.5s ease',
+                  }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Hook text */}
+          {previewMoment?.natural_hook && (
+            <div style={{
+              background: '#111', border: '1px solid #222', borderRadius: 10,
+              padding: '12px 14px', fontSize: 12, color: '#bbb', lineHeight: 1.6,
+            }}>
+              <div style={{ fontSize: 10, color: '#444', fontWeight: 700, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Gancho detectado
+              </div>
+              {previewMoment.natural_hook}
+            </div>
+          )}
+
+          {/* AI Skill buttons */}
+          {(() => {
+            const ctx = previewMoment?.text || ''
+            const sLoading = skillLoading[previewClip.id]
+            const res = skillResults[previewClip.id] || {}
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontSize: 10, color: '#444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  IA Copiloto
+                </div>
+                {(['hook', 'legenda', 'titulo'] as const).map(sk => (
+                  <div key={sk}>
+                    <button
+                      onClick={() => !sLoading && runSkill(previewClip.id, sk, ctx)}
+                      style={{
+                        width: '100%', padding: '7px 12px', borderRadius: 8,
+                        fontSize: 11, fontWeight: 600, textAlign: 'left',
+                        background: res[sk] ? 'rgba(16,185,129,0.08)' : 'rgba(56,189,248,0.06)',
+                        border: `1px solid ${res[sk] ? 'rgba(16,185,129,0.25)' : 'rgba(56,189,248,0.15)'}`,
+                        color: res[sk] ? '#10B981' : '#38BDF8',
+                        cursor: sLoading ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 6,
+                      }}
+                    >
+                      {sLoading === sk
+                        ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+                        : <Sparkles size={11} style={{ flexShrink: 0 }} />
+                      }
+                      {sk === 'hook' ? 'Gerar Hook' : sk === 'legenda' ? 'Gerar Legenda' : 'Gerar Título Viral'}
+                    </button>
+                    {res[sk] && (
+                      <div style={{
+                        marginTop: 4, padding: '6px 10px', borderRadius: 6,
+                        background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)',
+                        fontSize: 10, color: '#aaa', lineHeight: 1.5,
+                      }}>
+                        {res[sk]}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => {
+                setPreviewClip(null)
+                navigate({ name: 'ajuste', jobId, clipId: previewClip.id, expertId })
+              }}
+              style={{
+                flex: 1, padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#aaa',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}
+            >
+              <Sliders size={13} /> Editar
+            </button>
+            <a
+              href={downloadUrl(previewClip.id)}
+              download={`clip_${previewIdx + 1}.mp4`}
+              style={{
+                flex: 1, padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                background: accentColor + '22', border: `1px solid ${accentColor}44`,
+                color: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}
+            >
+              <Download size={13} /> Baixar
+            </a>
+          </div>
+        </div>
+
+        {/* Next clip */}
+        {previewIdx < displayed.length - 1 && (
+          <button
+            onClick={() => setPreviewClip(displayed[previewIdx + 1])}
+            style={{
+              background: 'rgba(255,255,255,0.07)', border: '1px solid #333',
+              borderRadius: 8, color: '#aaa', fontSize: 22, width: 40, height: 40,
+              cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >›</button>
+        )}
+
+        {/* Close button */}
+        <button
+          onClick={() => setPreviewClip(null)}
+          style={{
+            position: 'absolute', top: 16, right: 16,
+            background: 'rgba(255,255,255,0.08)', border: '1px solid #333',
+            borderRadius: 8, color: '#888', width: 36, height: 36,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <X size={16} />
+        </button>
+      </div>
+    )}
 
       {/* ── TOP BAR ── */}
       <div style={{
@@ -299,11 +580,11 @@ export default function Resultados({ jobId, expertId, liveTitle, navigate }: Pro
                 <div key={clip.id} style={{ position: 'relative' }}>
                   {/* 9:16 Thumbnail */}
                   <div
-                    onClick={() => selecting ? toggleSelect(clip.id) : undefined}
+                    onClick={() => selecting ? toggleSelect(clip.id) : setPreviewClip(clip)}
                     style={{
                       aspectRatio: '9/16', borderRadius: 10, overflow: 'hidden',
                       background: '#111', border: isSelected ? `2px solid ${accentColor}` : '1px solid #1e1e1e',
-                      position: 'relative', cursor: selecting ? 'pointer' : 'default',
+                      position: 'relative', cursor: 'pointer',
                       transition: 'border-color 0.15s',
                     }}
                   >
@@ -346,6 +627,20 @@ export default function Resultados({ jobId, expertId, liveTitle, navigate }: Pro
                     }}>
                       {moment?.text?.slice(0, 40) || 'Legenda automática gerada por IA...'}
                     </div>
+
+                    {/* Play icon overlay */}
+                    {!selecting && (
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        opacity: 0,
+                        transition: 'opacity 0.2s',
+                      }}
+                        className="play-overlay"
+                      >
+                        <PlayCircle size={44} style={{ color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.8))' }} />
+                      </div>
+                    )}
 
                     {/* Viral snippet badge */}
                     {clip.score >= 8.5 && (
@@ -500,11 +795,17 @@ export default function Resultados({ jobId, expertId, liveTitle, navigate }: Pro
                   }}
                 >
                   {/* Mini thumb */}
-                  <div style={{
-                    width: 40, height: 56, borderRadius: 6, flexShrink: 0,
-                    background: `radial-gradient(ellipse, ${accentColor}20, #111)`,
-                    border: '1px solid #2a2a2a',
-                  }} />
+                  <div
+                    onClick={() => setPreviewClip(clip)}
+                    style={{
+                      width: 40, height: 56, borderRadius: 6, flexShrink: 0,
+                      background: `radial-gradient(ellipse, ${accentColor}20, #111)`,
+                      border: '1px solid #2a2a2a', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <PlayCircle size={16} style={{ color: '#444' }} />
+                  </div>
 
                   {/* Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>

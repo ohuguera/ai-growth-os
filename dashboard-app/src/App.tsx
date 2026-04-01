@@ -1,218 +1,213 @@
-import { useState } from 'react';
-import {
-  Eye, Library, Tag, Star, FileText,
-  Megaphone, Scissors, Video, Hash, Gift, Package,
-  Layers, Lightbulb, Type, Film, Wifi, Briefcase,
-} from 'lucide-react';
-import { G, Btn } from './design-system';
-import { LoginPage } from './components/LoginPage';
-import { Sidebar } from './components/Sidebar';
-import { TopBar } from './components/TopBar';
-import { ModeProvider } from './store/modeContext';
-import { CentralControle } from './pages/CentralControle';
-import { MapaAgentes } from './pages/MapaAgentes';
-import { FluxoSistema } from './pages/FluxoSistema';
-import { SeletorModo } from './pages/SeletorModo';
-import { ConcorrentesIGaming } from './pages/ConcorrentesIGaming';
-import { GrandesMarcas } from './pages/GrandesMarcas';
-import { RadarTendencias } from './pages/RadarTendencias';
-import { CalendarioCampanhas } from './pages/CalendarioCampanhas';
-import { Hoje } from './pages/Hoje';
-import { CortesLive } from './pages/CortesLive';
-import { Producao } from './pages/Producao';
-import { CopyRoteiro } from './pages/CopyRoteiro';
-import { BancoHooks } from './pages/BancoHooks';
-import { BibliotecaOfertas } from './pages/BibliotecaOfertas';
-import { Templates } from './pages/Templates';
-import { ClipesGerados } from './pages/ClipesGerados';
-import { PortfolioCriativo } from './pages/PortfolioCriativo';
-import { HooksEmAlta } from './pages/HooksEmAlta';
-import { OfertasEmAlta } from './pages/OfertasEmAlta';
-import { FormatosEmAlta } from './pages/FormatosEmAlta';
-import { CortadorIA } from './pages/CortadorIA';
-import { AgenteRevisao } from './pages/AgenteRevisao';
-import { GeradorRoteiros } from './pages/GeradorRoteiros';
-import { IdeiasCampanha } from './pages/IdeiasCampanha';
-import { IdeiasFormato } from './pages/IdeiasFormato';
-import { SugestoesCopy } from './pages/SugestoesCopy';
-import { FontesMonitoradas } from './pages/FontesMonitoradas';
-import { ModoIGaming } from './pages/ModoIGaming';
-import { ModoGrandesMarcas } from './pages/ModoGrandesMarcas';
-import { EditorVideos } from './pages/EditorVideos';
-import { BibliotecaAnuncios } from './pages/BibliotecaAnuncios';
-import { SugestoesFormatos } from './pages/SugestoesFormatos';
-import { PlaceholderPage } from './pages/PlaceholderPage';
-import './index.css';
+import { useState } from 'react'
+import { Scissors, Wand2, Map, Bot } from 'lucide-react'
 
-// --- CONFIGURAÇÃO DE PÁGINAS ---
+// Módulo 1 — Cortes
+import Inbox from './pages/Inbox'
+import NovoCortee from './pages/NovoCortee'
+import Processamento from './pages/Processamento'
+import Resultados from './pages/Resultados'
+import AjusteRapido from './pages/AjusteRapido'
 
-const pageConfig: Record<string, { title: string; description: string }> = {
-  hoje:          { title: 'Hoje',          description: 'Checklist de entregas do dia e planejamento.' },
-  producao:      { title: 'Produção',      description: 'Controle das linhas de produção e cortes.' },
-  copy_roteiro:  { title: 'Copy & Roteiro', description: 'Geração de copy com estrutura Hook + Dev + CTA.' },
-  central:           { title: 'Central de Controle',      description: 'Visão geral em tempo real da operação.' },
-  agentes:           { title: 'Mapa de Agentes',           description: 'Monitore todos os agentes e o organograma.' },
-  fluxo:             { title: 'Fluxo do Sistema',          description: 'Visualize como os dados fluem desde a fonte até o output.' },
-  seletor:           { title: 'Seletor de Modo',           description: 'Escolha a fonte de inteligência do sistema.' },
-  modo_igaming:      { title: 'Modo iGaming',              description: 'Configurações e fontes ativas no Modo iGaming.' },
-  modo_marcas:       { title: 'Modo Grandes Marcas',       description: 'Configurações e fontes ativas no Modo Grandes Marcas.' },
-  radar_videos:      { title: 'Radar de Vídeos Virais',    description: 'Vídeos virais detectados no modo ativo.' },
-  biblioteca_anuncios: { title: 'Biblioteca de Anúncios', description: 'Anúncios analisados por concorrentes e marcas.' },
-  fontes:            { title: 'Fontes Monitoradas',        description: 'Todas as fontes ativas de mineração de dados.' },
-  sugestoes_formatos: { title: 'Sugestões de Formatos',   description: 'Formatos virais identificados pelos agentes.' },
-  concorrentes:      { title: 'Concorrentes iGaming',      description: 'Análise completa por Tier Alto e Tier Médio.' },
-  grandes_marcas:    { title: 'Grandes Marcas',            description: 'Referências das maiores marcas do Brasil adaptadas para iGaming.' },
-  ofertas_alta:      { title: 'Ofertas em Alta',           description: 'Ofertas com maior performance detectadas.' },
-  hooks_alta:        { title: 'Hooks em Alta',             description: 'Hooks com maior engajamento no período.' },
-  formatos_alta:     { title: 'Formatos em Alta',          description: 'Formatos de conteúdo com maior viralidade.' },
-  roteiros:          { title: 'Gerador de Roteiros',       description: 'Scripts gerados pelo Cérebro Criativo.' },
-  campanha:          { title: 'Ideias de Campanha',        description: 'Campanhas completas sugeridas para iGaming.' },
-  formato:           { title: 'Ideias de Formato',         description: 'Formatos adaptados para cada plataforma.' },
-  copy:              { title: 'Sugestões de Copy',         description: 'Textos e legendas gerados pela IA.' },
-  cortes:            { title: 'Cortes de Live',            description: 'Cortes automáticos dos melhores momentos.' },
-  cortador_ia:       { title: 'Cortador IA',               description: 'Envie uma live e a IA detecta, pontua e corta os melhores momentos automaticamente.' },
-  editor:            { title: 'Editor de Vídeo',           description: 'Edite e monte criativos em vídeo.' },
-  clipes:            { title: 'Clipes Gerados',            description: 'Biblioteca de clipes prontos para publicar.' },
-  hooks:             { title: 'Hooks',                     description: 'Banco de hooks validados por funil.' },
-  lib_ofertas:       { title: 'Ofertas',                   description: 'Catálogo de ofertas prontas.' },
-  templates:         { title: 'Templates',                  description: 'Templates de criativos e roteiros.' },
-  portfolio:         { title: 'Portfólio Criativo',        description: 'Todo o material produzido organizado.' },
-  agente_revisao:    { title: 'Agente de Revisao',          description: 'Dashboard de saude do sistema com diagnostico automatizado e proximas acoes.' },
-};
+// Módulo 2 — Criativos
+import EditorHome from './pages/EditorHome'
+import EditorProcessing from './pages/EditorProcessing'
+import TemplateGallery from './pages/TemplateGallery'
+import EditorRapido from './pages/EditorRapido'
+import Variacoes from './pages/Variacoes'
+import Exportacao from './pages/Exportacao'
 
-const iconMap: Record<string, any> = {
-  modo_igaming: Tag, modo_marcas: Star,
-  radar_videos: Video, biblioteca_anuncios: Library,
-  fontes: Wifi, sugestoes_formatos: Layers,
-  ofertas_alta: Gift, hooks_alta: TrendingUpIcon, formatos_alta: Layers,
-  roteiros: FileText, campanha: Megaphone, formato: Lightbulb, copy: Type,
-  cortes: Scissors, editor: Film, clipes: Video,
-  hooks: Hash, lib_ofertas: Tag, templates: Package, portfolio: Briefcase,
-};
+// Fluxo
+import FluxoEditor from './pages/FluxoEditor'
 
-function TrendingUpIcon(props: any) {
-  return <Eye {...props} />;
-}
+// Agentes
+import AgentesControl from './pages/AgentesControl'
 
-const colorMap: Record<string, string> = {
-  modo_igaming: G.colors.primary, modo_marcas: G.colors.secondary,
-  radar_videos: '#FF0050', biblioteca_anuncios: G.colors.warning,
-  fontes: G.colors.success, sugestoes_formatos: G.colors.primary,
-  ofertas_alta: G.colors.success, hooks_alta: G.colors.warning, formatos_alta: G.colors.primary,
-  roteiros: G.colors.secondary, campanha: G.colors.warning, formato: G.colors.primary, copy: G.colors.copy,
-  cortes: G.colors.copy, editor: G.colors.primary, clipes: G.colors.success,
-  hooks: G.colors.primary, lib_ofertas: G.colors.warning, templates: G.colors.secondary, portfolio: G.colors.success,
-};
+import type { Page, EditorPage } from './types'
+import AiAssistant from './components/AiAssistant'
+import LoginPage from './pages/LoginPage'
 
-const specialPages = ['hoje', 'producao', 'copy_roteiro', 'hooks', 'lib_ofertas', 'templates', 'clipes', 'portfolio', 'central', 'agentes', 'fluxo', 'seletor', 'concorrentes', 'grandes_marcas', 'radar_videos', 'biblioteca_anuncios', 'cortes', 'cortador_ia', 'editor', 'hooks_alta', 'ofertas_alta', 'formatos_alta', 'agente_revisao', 'roteiros', 'campanha', 'formato', 'copy', 'fontes', 'modo_igaming', 'modo_marcas', 'sugestoes_formatos'];
+type Module = 'cortes' | 'criativos' | 'fluxo' | 'agentes'
 
-// --- APP INTERNO (dentro do ModeProvider) ---
+export default function App() {
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem('hfive_auth') === '1')
+  const [module, setModule] = useState<Module>('cortes')
+  const [page, setPage] = useState<Page>({ name: 'inbox' })
+  const [editorPage, setEditorPage] = useState<EditorPage>({ name: 'home' })
 
-function AppInner() {
-  const [activeTab, setActiveTab] = useState('central');
-  const currentPage = pageConfig[activeTab];
-  const isSpecialPage = specialPages.includes(activeTab);
+  function switchModule(m: Module) {
+    setModule(m)
+    if (m === 'cortes') setPage({ name: 'inbox' })
+    if (m === 'criativos') setEditorPage({ name: 'home' })
+  }
+
+  const moduleLabel: Record<Module, string> = {
+    cortes: 'Sistema de Corte',
+    criativos: 'Editor de Criativos',
+    fluxo: 'Fluxo Operacional',
+    agentes: 'Central de Agentes',
+  }
+
+  // Breadcrumb for módulo 1
+  function corteBreadCrumb() {
+    const items: { label: string; page?: Page }[] = [{ label: 'Inbox', page: { name: 'inbox' } }]
+    if (page.name === 'novo') items.push({ label: 'Novo Corte' })
+    if (page.name === 'processando') items.push({ label: 'Processando...' })
+    if (page.name === 'resultados') items.push({ label: 'Resultados' })
+    if (page.name === 'ajuste') {
+      items.push({ label: 'Resultados', page: { name: 'resultados', jobId: page.jobId, expertId: page.expertId, liveTitle: '' } })
+      items.push({ label: 'Ajuste Rápido' })
+    }
+    return items
+  }
+
+  // Breadcrumb for módulo 2
+  function editorBreadCrumb() {
+    const items: { label: string; page?: EditorPage }[] = [{ label: 'Início', page: { name: 'home' } }]
+    if (editorPage.name === 'processing') items.push({ label: 'Processando...' })
+    if (editorPage.name === 'templates') items.push({ label: 'Templates' })
+    if (editorPage.name === 'editor') {
+      items.push({ label: 'Templates', page: { name: 'templates', jobId: editorPage.jobId, filename: editorPage.filename } })
+      items.push({ label: 'Editor' })
+    }
+    if (editorPage.name === 'variations') {
+      items.push({ label: 'Editor', page: { name: 'editor', jobId: editorPage.jobId, filename: editorPage.filename, templateId: editorPage.templateId } })
+      items.push({ label: 'Variações' })
+    }
+    if (editorPage.name === 'export') {
+      items.push({ label: 'Editor', page: { name: 'editor', jobId: editorPage.jobId, filename: editorPage.filename, templateId: editorPage.templateId } })
+      items.push({ label: 'Exportar' })
+    }
+    return items
+  }
+
+  const breadcrumbs = module === 'cortes' ? corteBreadCrumb() : editorBreadCrumb()
+
+  if (!authed) return <LoginPage onLogin={() => setAuthed(true)} />
 
   return (
-    <>
-      <style>{`
-        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake {
-          10%, 90% { transform: translate3d(-2px, 0, 0); }
-          20%, 80% { transform: translate3d(4px, 0, 0); }
-          30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
-          40%, 60% { transform: translate3d(6px, 0, 0); }
-        }
-        .btn-hover { transition: all 0.2s !important; }
-        .btn-hover:hover { opacity: 0.85; transform: translateY(-1px); }
-      `}</style>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-base)' }}>
+      {/* Top bar */}
+      <div style={{
+        height: 48, borderBottom: '1px solid var(--border)', flexShrink: 0,
+        display: 'flex', alignItems: 'center', padding: '0 20px', gap: 0,
+        background: 'var(--bg-card)',
+      }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 20 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 8,
+            background: 'linear-gradient(135deg, #38BDF8, #F472B6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
+          }}>✂️</div>
+          <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.3px' }}>HFIVE IA</span>
+        </div>
 
-      <div className="glow-orb glow-orb-1" />
-      <div className="glow-orb glow-orb-2" />
+        {/* Module tabs */}
+        <div style={{ display: 'flex', gap: 2, padding: '4px', background: 'var(--bg-surface)', borderRadius: 8, marginRight: 16 }}>
+          {([
+            { id: 'cortes' as Module, label: 'Cortes', icon: <Scissors size={12} /> },
+            { id: 'criativos' as Module, label: 'Criativos', icon: <Wand2 size={12} /> },
+            { id: 'fluxo' as Module, label: 'Fluxo', icon: <Map size={12} /> },
+            { id: 'agentes' as Module, label: 'Agentes', icon: <Bot size={12} /> },
+          ]).map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => switchModule(tab.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '5px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                background: module === tab.id ? 'var(--bg-card)' : 'transparent',
+                border: module === tab.id ? '1px solid var(--border-light)' : '1px solid transparent',
+                color: module === tab.id ? 'var(--text-primary)' : 'var(--text-secondary)',
+                transition: 'all 0.15s',
+              }}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
 
-      <div className="app-layout">
-        <TopBar />
-        <div className="dashboard-grid">
-          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        {/* Breadcrumb */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {breadcrumbs.map((item, i) => (
+            <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {i > 0 && <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>/</span>}
+              <span
+                onClick={item.page && i < breadcrumbs.length - 1 ? () => {
+                  if (module === 'cortes') setPage(item.page as Page)
+                  else setEditorPage(item.page as EditorPage)
+                } : undefined}
+                style={{
+                  fontSize: 13,
+                  color: i === breadcrumbs.length - 1 ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  fontWeight: i === breadcrumbs.length - 1 ? 600 : 400,
+                  cursor: item.page && i < breadcrumbs.length - 1 ? 'pointer' : 'default',
+                }}
+              >
+                {item.label}
+              </span>
+            </span>
+          ))}
+        </div>
 
-          <main className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', animationDelay: '0.1s', overflowY: 'auto', paddingRight: '4px' }}>
-            {/* Header */}
-            <header className="glass-panel responsive-header">
-              <div>
-                <h2 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '4px' }}>{currentPage?.title}</h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '13px', maxWidth: '600px', lineHeight: '1.5' }}>
-                  {currentPage?.description}
-                </p>
-              </div>
-              <div className="responsive-header-actions">
-                {!isSpecialPage && iconMap[activeTab] && (
-                  <Btn icon={iconMap[activeTab]} label="Ativar" variant="primary" />
-                )}
-              </div>
-            </header>
-
-            {/* Páginas construídas */}
-            {activeTab === 'hoje'         && <Hoje />}
-            {activeTab === 'producao'     && <Producao />}
-            {activeTab === 'copy_roteiro' && <CopyRoteiro />}
-            {activeTab === 'hooks'        && <BancoHooks />}
-            {activeTab === 'lib_ofertas'  && <BibliotecaOfertas />}
-            {activeTab === 'templates'    && <Templates />}
-            {activeTab === 'central'      && <CentralControle />}
-            {activeTab === 'agentes'      && <MapaAgentes />}
-            {activeTab === 'fluxo'        && <FluxoSistema />}
-            {activeTab === 'seletor'      && <SeletorModo />}
-            {activeTab === 'concorrentes' && <ConcorrentesIGaming />}
-            {activeTab === 'grandes_marcas' && <GrandesMarcas />}
-            {activeTab === 'radar_videos' && <RadarTendencias />}
-            {activeTab === 'calendario'   && <CalendarioCampanhas />}
-            {activeTab === 'cortes'       && <CortesLive />}
-            {activeTab === 'cortador_ia'  && <CortadorIA />}
-            {activeTab === 'editor'       && <EditorVideos />}
-            {activeTab === 'clipes'       && <ClipesGerados />}
-            {activeTab === 'portfolio'    && <PortfolioCriativo />}
-            {activeTab === 'hooks_alta'   && <HooksEmAlta />}
-            {activeTab === 'ofertas_alta'  && <OfertasEmAlta />}
-            {activeTab === 'formatos_alta' && <FormatosEmAlta />}
-            {activeTab === 'agente_revisao' && <AgenteRevisao />}
-            {activeTab === 'roteiros'      && <GeradorRoteiros />}
-            {activeTab === 'campanha'      && <IdeiasCampanha />}
-            {activeTab === 'formato'       && <IdeiasFormato />}
-            {activeTab === 'copy'          && <SugestoesCopy />}
-            {activeTab === 'fontes'        && <FontesMonitoradas />}
-            {activeTab === 'modo_igaming'        && <ModoIGaming />}
-            {activeTab === 'modo_marcas'          && <ModoGrandesMarcas />}
-            {activeTab === 'biblioteca_anuncios'  && <BibliotecaAnuncios />}
-            {activeTab === 'sugestoes_formatos'   && <SugestoesFormatos />}
-
-            {/* Placeholders */}
-            {!isSpecialPage && activeTab !== 'calendario' && iconMap[activeTab] && (
-              <PlaceholderPage
-                title={currentPage?.title}
-                icon={iconMap[activeTab]}
-                color={colorMap[activeTab]}
-                description={currentPage?.description}
-              />
-            )}
-          </main>
+        <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-muted)' }}>
+          Módulo {module === 'cortes' ? '1' : '2'} — {moduleLabel[module]}
         </div>
       </div>
-    </>
-  );
+
+      {/* Content */}
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        {/* Módulo 1 */}
+        {module === 'cortes' && <>
+          {page.name === 'inbox' && <Inbox navigate={setPage} />}
+          {page.name === 'novo' && <NovoCortee navigate={setPage} />}
+          {page.name === 'processando' && (
+            <Processamento jobId={page.jobId} expertId={page.expertId} liveTitle={page.liveTitle} presetId={page.presetId} navigate={setPage} />
+          )}
+          {page.name === 'resultados' && (
+            <Resultados jobId={page.jobId} expertId={page.expertId} liveTitle={page.liveTitle} navigate={setPage} />
+          )}
+          {page.name === 'ajuste' && (
+            <AjusteRapido jobId={page.jobId} clipId={page.clipId} expertId={page.expertId} navigate={setPage} />
+          )}
+        </>}
+
+        {/* Módulo 2 */}
+        {module === 'criativos' && <>
+          {editorPage.name === 'home' && <EditorHome navigate={setEditorPage} />}
+          {editorPage.name === 'processing' && (
+            <EditorProcessing jobId={editorPage.jobId} filename={editorPage.filename} navigate={setEditorPage} />
+          )}
+          {editorPage.name === 'templates' && (
+            <TemplateGallery jobId={editorPage.jobId} filename={editorPage.filename} navigate={setEditorPage} />
+          )}
+          {editorPage.name === 'editor' && (
+            <EditorRapido jobId={editorPage.jobId} filename={editorPage.filename} templateId={editorPage.templateId} navigate={setEditorPage} />
+          )}
+          {editorPage.name === 'variations' && (
+            <Variacoes jobId={editorPage.jobId} filename={editorPage.filename} templateId={editorPage.templateId} navigate={setEditorPage} />
+          )}
+          {editorPage.name === 'export' && (
+            <Exportacao jobId={editorPage.jobId} filename={editorPage.filename} templateId={editorPage.templateId} navigate={setEditorPage} />
+          )}
+        </>}
+
+        {/* Fluxo Operacional */}
+        {module === 'fluxo' && <FluxoEditor />}
+
+        {/* Central de Agentes */}
+        {module === 'agentes' && <AgentesControl />}
+      </div>
+
+      {/* Assistente IA — flutuante em todas as páginas */}
+      <AiAssistant
+        context={{
+          module,
+          page: module === 'cortes' ? page.name
+            : module === 'criativos' ? editorPage.name
+            : module,
+        }}
+      />
+    </div>
+  )
 }
-
-// --- APP ROOT ---
-
-function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
-
-  if (!loggedIn) return <LoginPage onLogin={() => setLoggedIn(true)} />;
-
-  return (
-    <ModeProvider>
-      <AppInner />
-    </ModeProvider>
-  );
-}
-
-export default App;

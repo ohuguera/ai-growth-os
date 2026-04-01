@@ -1,0 +1,248 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Squad: BINGO! AIOS — Fábrica de Criativos 2.0
+# Domain: iGaming · Automação de Vídeos de Alto Impacto
+# Created: 2026-03-06
+# Version: 1.0.0
+# ═══════════════════════════════════════════════════════════════════════════════
+
+squad:
+  name: bingo-aios
+  display_name: "BINGO! AIOS — Fábrica de Criativos"
+  version: "1.0.0"
+  domain: "iGaming · Automação de Vídeos · Alta Retenção"
+  description: |
+    Squad especializado em automação industrial de vídeos para o nicho de iGaming.
+    Opera os pilares: Live-IA (Escuta), Studio-IA (Forja), Cérebro (Estratégia),
+    Automation (Fluxos) e Cofre (Performance). O objetivo é transformar material
+    bruto em criativos de alta conversão em escala, 24h por dia, sem intervenção humana.
+
+  philosophy: |
+    "Escala sem perder a alma."
+    Cada vídeo gerado deve parecer criado por um humano.
+    Os 3 primeiros segundos definem tudo. A retenção é engenharia, não sorte.
+
+  keywords:
+    - igaming
+    - video-automation
+    - reels
+    - hooks
+    - retention
+    - ffmpeg
+    - claude
+    - gemini
+    - criativos
+    - reals-bet
+    - bingo-bet
+    - aviator
+    - roleta
+
+  entry_agent: aios-chief
+  master_user: ohuguera
+  created_at: "2026-03-06"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TIER ARCHITECTURE
+# ─────────────────────────────────────────────────────────────────────────────
+
+tiers:
+  tier_0:
+    name: "Comando Central"
+    agents:
+      - aios-chief
+    purpose: "Orquestra o squad, decide o fluxo e roteia vídeos pelo pipeline"
+
+  tier_1:
+    name: "Produção (Linha de Forja)"
+    agents:
+      - agent-screener
+      - agent-editor
+      - agent-hooks
+    purpose: "Execução direta: transcrição, edição e geração de ganchos"
+
+  tier_2:
+    name: "Escala & Inteligência"
+    agents:
+      - agent-variacoes
+      - agent-analytics
+      - agent-strategist
+    purpose: "Multiplicação de formatos, aprendizado com dados e estratégia de mercado"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AGENT REGISTRY
+# ─────────────────────────────────────────────────────────────────────────────
+
+agents:
+  aios-chief:
+    file: agents/aios-chief.md
+    tier: 0
+    icon: "🧠"
+    pilar: "Automation"
+    focus: "Orquestração, decisão de fluxo, roteamento de vídeos"
+    impacto: critico
+    complexidade: 3/5
+
+  agent-screener:
+    file: agents/agent-screener.md
+    tier: 1
+    icon: "🔊"
+    pilar: "Live-IA"
+    focus: "Transcrição Whisper, Score de Viralidade, detecção de picos de dopamina"
+    impacto: critico
+    complexidade: 3/5
+
+  agent-editor:
+    file: agents/agent-editor.md
+    tier: 1
+    icon: "✂️"
+    pilar: "Studio-IA"
+    focus: "Cortes FFmpeg, legendas Montserrat Black, zooms, Dicionário de Gatilhos"
+    impacto: critico
+    complexidade: 4/5
+
+  agent-hooks:
+    file: agents/agent-hooks.md
+    tier: 1
+    icon: "🎯"
+    pilar: "Studio-IA"
+    focus: "Copy de hooks iGaming via Claude, CTAs agressivos, legenda de conversão"
+    impacto: alto
+    complexidade: 2/5
+
+  agent-variacoes:
+    file: agents/agent-variacoes.md
+    tier: 2
+    icon: "📐"
+    pilar: "Studio-IA"
+    focus: "Geração de até 72 variações/dia em formatos 9:16, 1:1, 16:9"
+    impacto: alto
+    complexidade: 3/5
+
+  agent-analytics:
+    file: agents/agent-analytics.md
+    tier: 2
+    icon: "📊"
+    pilar: "Cofre"
+    focus: "Leitura de ROAS/CTR, retroalimentação do Agent Editor, ciclo de aprendizado"
+    impacto: alto
+    complexidade: 3/5
+
+  agent-strategist:
+    file: agents/agent-strategist.md
+    tier: 2
+    icon: "🧬"
+    pilar: "Cérebro"
+    focus: "RAG 24/7 lendo PDFs de estratégia, atualiza moldes de edição automaticamente"
+    impacto: fundacional
+    complexidade: 5/5
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HANDOFF MATRIX (Quem fala com quem)
+# ─────────────────────────────────────────────────────────────────────────────
+
+handoffs:
+  aios-chief:
+    routes_to: [agent-screener, agent-editor, agent-hooks, agent-variacoes, agent-analytics, agent-strategist]
+
+  agent-screener:
+    output_para: [agent-editor]
+    colabora_com: [agent-hooks]
+    escalate_para: [aios-chief]
+
+  agent-editor:
+    output_para: [agent-variacoes]
+    colabora_com: [agent-hooks, agent-strategist]
+    escalate_para: [aios-chief]
+
+  agent-hooks:
+    output_para: [agent-editor]
+    colabora_com: [agent-screener, agent-strategist]
+    escalate_para: [aios-chief]
+
+  agent-variacoes:
+    output_para: [cofre]
+    escalate_para: [aios-chief]
+
+  agent-analytics:
+    output_para: [agent-editor, agent-strategist]
+    escalate_para: [aios-chief]
+
+  agent-strategist:
+    output_para: [agent-editor, agent-hooks]
+    escalate_para: [aios-chief]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PIPELINE DE PRODUÇÃO (Fluxo Contínuo)
+# ─────────────────────────────────────────────────────────────────────────────
+
+pipeline:
+  etapas:
+    - etapa: "1. Ingestão"
+      responsavel: aios-chief
+      input: "Link de vídeo bruto ou pasta Drive"
+      output: "Fila de processamento BullMQ"
+
+    - etapa: "2. Transcrição & Score"
+      responsavel: agent-screener
+      input: "Vídeo bruto (.mp4)"
+      output: "Transcrição com timestamps + Vira Score"
+
+    - etapa: "3. Hook & Copy"
+      responsavel: agent-hooks
+      input: "Transcrição + contexto da operação (Reals Bet / Expert)"
+      output: "Hook de 3s + CTA final"
+
+    - etapa: "4. Forja"
+      responsavel: agent-editor
+      input: "Corte identificado + Hook + Dicionário de Gatilhos"
+      output: "Arquivo .mp4 com legenda, zoom, marca e música"
+
+    - etapa: "5. Variações"
+      responsavel: agent-variacoes
+      input: "Vídeo forjado"
+      output: "Até 72 variações de formato/legenda/CTA"
+
+    - etapa: "6. Cofre & Analytics"
+      responsavel: agent-analytics
+      input: "Métricas de ROAS/CTR das variações publicadas"
+      output: "Atualização dos presets do Agent Editor"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OPERAÇÕES SUPORTADAS
+# ─────────────────────────────────────────────────────────────────────────────
+
+operacoes:
+  reals-bet:
+    estilo: "FLASH — direto ao ponto, BPM alto, primeiro frame = lucro"
+    legenda: "Montserrat Black, MAIÚSCULAS, branco sobre escuro"
+    max_duracao: 15s
+
+  bingo-bet:
+    estilo: "FLASH — mesmo padrão Reals, cores da marca evidentes"
+    legenda: "Montserrat Black, MAIÚSCULAS"
+    max_duracao: 15s
+
+  experts-aviator:
+    estilo: "ROCKET — storytelling autoridade, tela dividida, ostentação real"
+    legenda: "Pop-up dinâmico, palavra por palavra"
+    max_duracao: 45s
+
+  experts-roleta:
+    estilo: "ROCKET — prova de método, tensão crescente, revelação da estratégia"
+    legenda: "Montserrat Black com destaque em palavras-gatilho"
+    max_duracao: 45s
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SETTINGS
+# ─────────────────────────────────────────────────────────────────────────────
+
+settings:
+  activation:
+    prefix: "bingo-aios"
+    example: "@bingo-aios:agent-editor"
+
+  master_acesso: "ohuguera (ilimitado)"
+  producao_alvo: "144+ vídeos/semana"
+  variacoes_dia: 72
+  cd packages\bingo-engine
+node src\chat.js  
+

@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BINGO! AIOS — Chassi Operacional v2</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060812;
+      --s1: #0d1128;
+      --s2: #111830;
+      --b: rgba(120, 80, 255, .2);
+      --p: #7B4FFE;
+      --c: #00D4FF;
+      --pk: #FF3FA4;
+      --g: #00FFB2;
+      --y: #FFD600;
+      --t: #E8EEFF;
+      --m: #6B7AB0
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--t);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px;
+      background: rgba(13, 17, 40, .9);
+      border-bottom: 1px solid var(--b);
+      position: sticky;
+      top: 0;
+      z-index: 99;
+      backdrop-filter: blur(12px)
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .logo-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--p), var(--c));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: #fff;
+      font-size: 16px
+    }
+
+    .logo-text {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 17px;
+      font-weight: 700
+    }
+
+    .logo-text span {
+      color: var(--p)
+    }
+
+    .badge {
+      background: rgba(123, 79, 254, .15);
+      border: 1px solid var(--p);
+      color: var(--p);
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      animation: pulse 2s infinite
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .5
+      }
+    }
+
+    nav {
+      display: flex;
+      gap: 2px;
+      padding: 16px 28px 0;
+      border-bottom: 1px solid var(--b);
+      overflow-x: auto
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--m);
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 9px 16px;
+      border-radius: 7px 7px 0 0;
+      white-space: nowrap;
+      transition: .2s;
+      border-bottom: 2px solid transparent;
+      position: relative;
+      bottom: -1px
+    }
+
+    .tab-btn:hover {
+      color: var(--t);
+      background: rgba(123, 79, 254, .08)
+    }
+
+    .tab-btn.active {
+      color: var(--p);
+      border-bottom-color: var(--p);
+      background: rgba(123, 79, 254, .1)
+    }
+
+    .tab-content {
+      display: none;
+      padding: 28px;
+      animation: fi .25s ease
+    }
+
+    .tab-content.active {
+      display: block
+    }
+
+    @keyframes fi {
+      from {
+        opacity: 0;
+        transform: translateY(6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .card {
+      background: var(--s1);
+      border: 1px solid var(--b);
+      border-radius: 14px;
+      padding: 22px
+    }
+
+    .ct {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--m);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 14px
+    }
+
+    .g2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px
+    }
+
+    .g3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px
+    }
+
+    .g4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px
+    }
+
+    .kpi {
+      background: var(--s2);
+      border: 1px solid var(--b);
+      border-radius: 10px;
+      padding: 14px
+    }
+
+    .kpi-l {
+      font-size: 11px;
+      color: var(--m);
+      margin-bottom: 5px
+    }
+
+    .kpi-v {
+      font-size: 24px;
+      font-weight: 700
+    }
+
+    .kpi-s {
+      font-size: 10px;
+      color: var(--m);
+      margin-top: 3px
+    }
+
+    .np {
+      color: var(--p)
+    }
+
+    .nc {
+      color: var(--c)
+    }
+
+    .ng {
+      color: var(--g)
+    }
+
+    .nk {
+      color: var(--pk)
+    }
+
+    /* ORG */
+    .org-tree {
+      display: flex;
+      flex-direction: column;
+      align-items: center
+    }
+
+    .org-lvl {
+      display: flex;
+      justify-content: center;
+      gap: 20px
+    }
+
+    .onode {
+      background: var(--s2);
+      border: 1px solid var(--b);
+      border-radius: 10px;
+      padding: 12px 18px;
+      text-align: center;
+      min-width: 140px;
+      cursor: pointer;
+      transition: .2s
+    }
+
+    .onode:hover {
+      border-color: var(--p);
+      transform: translateY(-2px);
+      box-shadow: 0 0 18px rgba(123, 79, 254, .25)
+    }
+
+    .onode.master {
+      border-color: var(--p);
+      background: rgba(123, 79, 254, .1)
+    }
+
+    .onode.dept {
+      border-color: rgba(0, 212, 255, .3)
+    }
+
+    .ni {
+      font-size: 20px;
+      margin-bottom: 5px
+    }
+
+    .nt {
+      font-size: 12px;
+      font-weight: 700
+    }
+
+    .nr {
+      font-size: 10px;
+      color: var(--m);
+      margin-top: 2px
+    }
+
+    .conn {
+      width: 2px;
+      height: 28px;
+      background: linear-gradient(var(--p), var(--c));
+      margin: 0 auto;
+      opacity: .4
+    }
+
+    /* AGENT MAP */
+    .pilar-box {
+      background: var(--s2);
+      border: 1px solid var(--b);
+      border-radius: 12px;
+      padding: 18px
+    }
+
+    .pilar-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .agent-card {
+      background: var(--s1);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--p);
+      position: relative
+    }
+
+    .agent-card.cyan {
+      border-left-color: var(--c)
+    }
+
+    .agent-card.green {
+      border-left-color: var(--g)
+    }
+
+    .agent-card.pink {
+      border-left-color: var(--pk)
+    }
+
+    .agent-name {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px
+    }
+
+    .agent-io {
+      font-size: 10px;
+      color: var(--m);
+      line-height: 1.5
+    }
+
+    .flow-arrow {
+      text-align: center;
+      color: var(--m);
+      font-size: 11px;
+      padding: 4px 0
+    }
+
+    /* COMPETITORS */
+    .cc {
+      background: var(--s2);
+      border: 1px solid var(--b);
+      border-radius: 12px;
+      padding: 18px;
+      transition: .2s
+    }
+
+    .cc:hover {
+      border-color: var(--c);
+      box-shadow: 0 0 14px rgba(0, 212, 255, .15)
+    }
+
+    .tag {
+      background: rgba(123, 79, 254, .15);
+      border: 1px solid rgba(123, 79, 254, .3);
+      color: var(--p);
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 5px
+    }
+
+    .tag.c {
+      background: rgba(0, 212, 255, .1);
+      border-color: rgba(0, 212, 255, .3);
+      color: var(--c)
+    }
+
+    .tag.g {
+      background: rgba(0, 255, 178, .1);
+      border-color: rgba(0, 255, 178, .3);
+      color: var(--g)
+    }
+
+    .tag.k {
+      background: rgba(255, 63, 164, .1);
+      border-color: rgba(255, 63, 164, .3);
+      color: var(--pk)
+    }
+
+    /* FERRAMENTAS */
+    .tool-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px
+    }
+
+    .tool-panel {
+      background: var(--s1);
+      border: 1px solid var(--b);
+      border-radius: 14px;
+      overflow: hidden
+    }
+
+    .tool-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--b);
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .tool-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px
+    }
+
+    .tool-body {
+      padding: 18px
+    }
+
+    .feature-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .04)
+    }
+
+    .feature-row:last-child {
+      border: none
+    }
+
+    .feat-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0
+    }
+
+    .feat-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 2px
+    }
+
+    .feat-desc {
+      font-size: 11px;
+      color: var(--m);
+      line-height: 1.5
+    }
+
+    .diff-badge {
+      font-size: 9px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: rgba(0, 255, 178, .1);
+      color: var(--g);
+      border: 1px solid rgba(0, 255, 178, .2);
+      margin-left: 6px
+    }
+
+    /* FONTES */
+    .fonte-card {
+      background: var(--s2);
+      border: 1px solid var(--b);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 12px
+    }
+
+    .fonte-icon {
+      font-size: 24px;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0
+    }
+
+    .fonte-meta {
+      flex: 1
+    }
+
+    .fonte-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 3px
+    }
+
+    .fonte-desc {
+      font-size: 11px;
+      color: var(--m);
+      line-height: 1.5
+    }
+
+    .fonte-agent {
+      font-size: 10px;
+      margin-top: 6px;
+      color: var(--p)
+    }
+
+    /* CURVE */
+    .sb {
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, .08);
+      overflow: hidden;
+      margin-bottom: 8px
+    }
+
+    .sbf {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s ease
+    }
+
+    /* REVIEW */
+    .rv {
+      background: var(--s2);
+      border-radius: 10px;
+      padding: 16px;
+      border-left: 3px solid var(--p);
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 12px
+    }
+
+    .rv.w {
+      border-left-color: var(--y)
+    }
+
+    .rv.ok {
+      border-left-color: var(--g)
+    }
+
+    .rv-b {
+      font-size: 10px;
+      padding: 3px 9px;
+      border-radius: 15px;
+      white-space: nowrap;
+      background: rgba(123, 79, 254, .2);
+      color: var(--p)
+    }
+
+    .rv-b.w {
+      background: rgba(255, 214, 0, .1);
+      color: var(--y)
+    }
+
+    .rv-b.ok {
+      background: rgba(0, 255, 178, .1);
+      color: var(--g)
+    }
+
+    .sh {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px
+    }
+
+    .st {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700
+    }
+
+    .st span {
+      color: var(--p)
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="logo">
+      <div class="logo-icon">B</div>
+      <div class="logo-text">BINGO! <span>AIOS</span></div>
+    </div>
+    <span class="badge">● SISTEMA VIVO</span>
+    <div style="font-size:11px;color:var(--m)">v2.0 · Chassi Operacional</div>
+  </header>
+
+  <nav>
+    <button class="tab-btn active" onclick="switchTab('organograma',this)">🏗 Organograma</button>
+    <button class="tab-btn" onclick="switchTab('agentes',this)">🤖 Mapa de Agentes</button>
+    <button class="tab-btn" onclick="switchTab('ferramentas',this)">⚙️ Ferramentas</button>
+    <button class="tab-btn" onclick="switchTab('fontes',this)">📡 Fontes</button>
+    <button class="tab-btn" onclick="switchTab('concorrentes',this)">🔍 Concorrentes</button>
+    <button class="tab-btn" onclick="switchTab('curva',this)">📈 Curva de Vídeo</button>
+    <button class="tab-btn" onclick="switchTab('revisor',this)">🛡 Revisor</button>
+  </nav>
+
+  <!-- ════════════════════ ORGANOGRAMA (MAPA NEURAL) ════════════════════ -->
+  <div id="tab-organograma" class="tab-content active">
+    <div class="sh">
+      <div class="st">Organograma <span>Neural</span></div><span style="font-size:11px;color:var(--m)">Árvore de
+        decisão, pilares e agentes em operação</span>
+    </div>
+    <div class="g4" style="margin-bottom:22px">
+      <div class="kpi">
+        <div class="kpi-l">Consciência Central</div>
+        <div class="kpi-v np">AIOS</div>
+        <div class="kpi-s">Orquestrador Maestro</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-l">Nós (Agentes)</div>
+        <div class="kpi-v nc">7</div>
+        <div class="kpi-s">Operários IA independentes</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-l">Pilares Ativos</div>
+        <div class="kpi-v ng">5</div>
+        <div class="kpi-s">Módulos de processamento</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-l">Status da Malha</div>
+        <div class="kpi-v nk">LIVE</div>
+        <div class="kpi-s">Sinapses conectadas</div>
+      </div>
+    </div>
+
+    <div class="card" style="overflow-x:auto;padding:30px 20px">
+      <div class="org-tree" style="min-width:1050px">
+        <!-- LEVEL 1: Master -->
+        <div class="org-lvl">
+          <div class="onode master" style="min-width:200px">
+            <div class="ni">👑</div>
+            <div class="nt">Hugo (ohuguera)</div>
+            <div class="nr">Master · Visão & Input Bruto</div>
+          </div>
+        </div>
+        <div class="conn" style="height:20px"></div>
+
+        <!-- LEVEL 2: Orquestrador Principal -->
+        <div class="org-lvl">
+          <div class="onode"
+            style="border-color:rgba(123,79,254,.6);background:rgba(123,79,254,.15);min-width:260px;box-shadow:0 0 20px rgba(123,79,254,.15)">
+            <div class="ni">⚡</div>
+            <div class="nt" style="font-size:14px;color:var(--t)">Pilar Autónomo: Automation</div>
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(123,79,254,.3)">
+              <div class="nt" style="color:var(--p);font-size:13px">🧠 AIOS Chief</div>
+              <div class="nr" style="color:rgba(255,255,255,.6);line-height:1.4">Recebe os brutos (Live, UGC)<br>Toma a
+                decisão da rota e enfileira</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:center">
+          <div
+            style="width:900px;height:2px;background:linear-gradient(90deg,var(--c),var(--p),var(--g),var(--y));opacity:.5">
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;width:900px;margin:0 auto">
+          <div class="conn" style="height:20px;margin:0"></div>
+          <div class="conn" style="height:20px;margin:0"></div>
+          <div class="conn" style="height:20px;margin:0"></div>
+          <div class="conn" style="height:20px;margin:0"></div>
+        </div>
+
+        <!-- LEVEL 3: Os 4 Pilares de Processamento -->
+        <div class="org-lvl" style="gap:20px;align-items:flex-start">
+
+          <!-- PILAR 1: LIVE-IA -->
+          <div style="display:flex;flex-direction:column;align-items:center;width:210px">
+            <div class="onode" style="border-color:rgba(0,212,255,.4);background:rgba(0,212,255,.05);width:100%">
+              <div class="ni">📡</div>
+              <div class="nt" style="color:var(--c)">Pilar: Live-IA</div>
+              <div class="nr">Escuta e Mineração</div>
+            </div>
+            <div class="conn" style="height:15px;background:var(--c)"></div>
+            <!-- Agent -->
+            <div class="onode"
+              style="border-color:var(--c);border-left:4px solid var(--c);width:100%;text-align:left;padding:12px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span
+                  style="font-size:18px">🔊</span><span class="nt">Agent Screener</span></div>
+              <div style="font-size:10px;color:var(--m);line-height:1.5">
+                <span style="color:var(--t)">O que faz:</span> Transcreve e dá Score de Viralidade (Gatilhos
+                iGaming)<br>
+                <span style="color:var(--t)">Entrega:</span> Clips isolados ranqueados
+              </div>
+            </div>
+          </div>
+
+          <!-- PILAR 2: STUDIO-IA -->
+          <div style="display:flex;flex-direction:column;align-items:center;width:210px">
+            <div class="onode" style="border-color:rgba(123,79,254,.4);background:rgba(123,79,254,.05);width:100%">
+              <div class="ni">⚒️</div>
+              <div class="nt" style="color:var(--p)">Pilar: Studio-IA</div>
+              <div class="nr">A Forja Criativa</div>
+            </div>
+            <div class="conn" style="height:15px;background:var(--p)"></div>
+            <!-- Agents -->
+            <div style="display:flex;flex-direction:column;gap:12px;width:100%">
+              <div class="onode"
+                style="border-color:var(--p);border-left:4px solid var(--p);text-align:left;padding:12px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span
+                    style="font-size:18px">🎯</span><span class="nt">Agent Hooks</span></div>
+                <div style="font-size:10px;color:var(--m);line-height:1.5">
+                  <span style="color:var(--t)">O que faz:</span> Cria o Copywriting forte para os 3s iniciais usando
+                  Claude<br>
+                  <span style="color:var(--t)">Entrega:</span> Legenda falada e CTA urgente
+                </div>
+              </div>
+              <div class="conn" style="height:8px;background:var(--p);margin-top:-6px;margin-bottom:-6px"></div>
+              <div class="onode"
+                style="border-color:var(--p);border-left:4px solid var(--p);text-align:left;padding:12px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span
+                    style="font-size:18px">✂️</span><span class="nt">Agent Editor</span></div>
+                <div style="font-size:10px;color:var(--m);line-height:1.5">
+                  <span style="color:var(--t)">O que faz:</span> Comanda FFmpeg, insere assets visuais de gatilho
+                  (roleta, green)<br>
+                  <span style="color:var(--t)">Entrega:</span> Vídeo mestre .MP4
+                </div>
+              </div>
+              <div class="conn" style="height:8px;background:var(--p);margin-top:-6px;margin-bottom:-6px"></div>
+              <div class="onode"
+                style="border-color:var(--p);border-left:4px solid var(--p);text-align:left;padding:12px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span
+                    style="font-size:18px">📐</span><span class="nt">Agent Variações</span></div>
+                <div style="font-size:10px;color:var(--m);line-height:1.5">
+                  <span style="color:var(--t)">O que faz:</span> Multiplicador de escala (9:16, 1:1, colors)<br>
+                  <span style="color:var(--t)">Entrega:</span> Até 72 vídeos derivados
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PILAR 3: CÉREBRO -->
+          <div style="display:flex;flex-direction:column;align-items:center;width:210px">
+            <div class="onode" style="border-color:rgba(0,255,178,.4);background:rgba(0,255,178,.05);width:100%">
+              <div class="ni">🧬</div>
+              <div class="nt" style="color:var(--g)">Pilar: Cérebro</div>
+              <div class="nr">Inteligência (RAG)</div>
+            </div>
+            <div class="conn" style="height:15px;background:var(--g)"></div>
+            <!-- Agent -->
+            <div class="onode"
+              style="border-color:var(--g);border-left:4px solid var(--g);width:100%;text-align:left;padding:12px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span
+                  style="font-size:18px">🧠</span><span class="nt">Agent Strategist</span></div>
+              <div style="font-size:10px;color:var(--m);line-height:1.5">
+                <span style="color:var(--t)">O que faz:</span> Lê PDFs e referências globais RAG 24/7<br>
+                <span style="color:var(--t)">Entrega:</span> Ajusta os algoritmos de edição
+              </div>
+            </div>
+          </div>
+
+          <!-- PILAR 4: COFRE -->
+          <div style="display:flex;flex-direction:column;align-items:center;width:210px">
+            <div class="onode" style="border-color:rgba(255,214,0,.4);background:rgba(255,214,0,.05);width:100%">
+              <div class="ni">💰</div>
+              <div class="nt" style="color:var(--y)">Pilar: Cofre</div>
+              <div class="nr">Métricas e Armazenamento</div>
+            </div>
+            <div class="conn" style="height:15px;background:var(--y)"></div>
+            <!-- Agent -->
+            <div class="onode"
+              style="border-color:var(--y);border-left:4px solid var(--y);width:100%;text-align:left;padding:12px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span
+                  style="font-size:18px">📊</span><span class="nt">Agent Analytics</span></div>
+              <div style="font-size:10px;color:var(--m);line-height:1.5">
+                <span style="color:var(--t)">O que faz:</span> Consome API do Meta/TikTok (ROAS e Retenção)<br>
+                <span style="color:var(--t)">Entrega:</span> Define padrões ouro
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════ MAPA DE AGENTES ════════════════════ -->
+  <div id="tab-agentes" class="tab-content">
+    <div class="sh">
+      <div class="st">Mapa de <span>Agentes</span></div><span style="font-size:11px;color:var(--m)">Onde cada agente
+        atua, o que consome e o que entrega</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:18px">
+
+      <div class="pilar-box">
+        <div class="pilar-title" style="color:var(--c)"><span>📡</span> Live-IA — Escuta</div>
+        <div class="agent-card cyan">
+          <div class="agent-name">🔊 Agent Screener</div>
+          <div class="agent-io"><span style="color:var(--c)">INPUT:</span> Vídeo bruto (.mp4 / link)<br><span
+              style="color:var(--g)">OUTPUT:</span> Clips ranqueados + Vira Score<br><span
+              style="color:var(--m)">AUXILIADO POR:</span> Whisper (transcrição)<br><span style="color:var(--p)">ENTREGA
+              PARA:</span> Agent Editor + Agent Hooks</div>
+        </div>
+        <div style="background:rgba(0,212,255,.06);border-radius:7px;padding:10px;font-size:11px;color:var(--m)">
+          🎯 Replica o <strong style="color:var(--c)">core do OpusClip</strong>: detecção de momentos virais com score
+          automático
+        </div>
+      </div>
+
+      <div class="pilar-box">
+        <div class="pilar-title" style="color:var(--p)"><span>⚒️</span> Studio-IA — Forja</div>
+        <div class="agent-card">
+          <div class="agent-name">✂️ Agent Editor</div>
+          <div class="agent-io"><span style="color:var(--c)">INPUT:</span> Clip + Hook + Gatilhos<br><span
+              style="color:var(--g)">OUTPUT:</span> .mp4 final (1080×1920)<br><span style="color:var(--m)">AUXILIADO
+              POR:</span> FFmpeg + Dicionário Gatilhos<br><span style="color:var(--p)">ENTREGA PARA:</span> Agent
+            Variações</div>
+        </div>
+        <div class="agent-card" style="margin-top:8px">
+          <div class="agent-name">🎯 Agent Hooks</div>
+          <div class="agent-io"><span style="color:var(--c)">INPUT:</span> Transcrição + contexto da op.<br><span
+              style="color:var(--g)">OUTPUT:</span> Hook 3s + CTA final<br><span style="color:var(--m)">AUXILIADO
+              POR:</span> Claude 3.5 Sonnet<br><span style="color:var(--p)">ENTREGA PARA:</span> Agent Editor</div>
+        </div>
+        <div class="agent-card" style="margin-top:8px">
+          <div class="agent-name">📐 Agent Variações</div>
+          <div class="agent-io"><span style="color:var(--c)">INPUT:</span> .mp4 forjado<br><span
+              style="color:var(--g)">OUTPUT:</span> Até 72 variações/dia<br><span style="color:var(--m)">AUXILIADO
+              POR:</span> FFmpeg + presets<br><span style="color:var(--p)">ENTREGA PARA:</span> Cofre</div>
+        </div>
+        <div
+          style="background:rgba(123,79,254,.06);border-radius:7px;padding:10px;font-size:11px;color:var(--m);margin-top:8px">
+          🎯 Replica o <strong style="color:var(--p)">core do Captions.ai</strong>: legendas dinâmicas + eye contact +
+          B-roll automático
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="pilar-box">
+          <div class="pilar-title" style="color:var(--g)"><span>🧬</span> Cérebro — Estratégia</div>
+          <div class="agent-card green">
+            <div class="agent-name">🧬 Agent Strategist</div>
+            <div class="agent-io"><span style="color:var(--c)">INPUT:</span> PDFs + histórico de performance<br><span
+                style="color:var(--g)">OUTPUT:</span> Moldes atualizados de edição<br><span
+                style="color:var(--m)">AUXILIADO POR:</span> Gemini 1.5 Pro (RAG)<br><span
+                style="color:var(--p)">ENTREGA PARA:</span> Agent Editor + Agent Hooks</div>
+          </div>
+        </div>
+        <div class="pilar-box">
+          <div class="pilar-title" style="color:var(--pk)"><span>💰</span> Cofre — Performance</div>
+          <div class="agent-card pink">
+            <div class="agent-name">📊 Agent Analytics</div>
+            <div class="agent-io"><span style="color:var(--c)">INPUT:</span> ROAS / CTR / Retenção (Meta /
+              TikTok)<br><span style="color:var(--g)">OUTPUT:</span> Presets vencedores + descartes<br><span
+                style="color:var(--m)">AUXILIADO POR:</span> Meta Ads API + TikTok API<br><span
+                style="color:var(--p)">ENTREGA PARA:</span> Agent Editor + Strategist</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fluxo visual -->
+    <div class="card">
+      <div class="ct">Pipeline Completo — Fluxo de Dados entre Agentes</div>
+      <div style="display:flex;align-items:center;gap:0;overflow-x:auto;padding:12px 0">
+        <div style="text-align:center;min-width:100px">
+          <div style="font-size:20px">📥</div>
+          <div style="font-size:10px;color:var(--m);margin-top:4px">Vídeo Bruto</div>
+        </div>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,var(--p),var(--c));min-width:30px;opacity:.4">
+        </div>
+        <div style="text-align:center;min-width:100px">
+          <div style="font-size:20px;background:rgba(0,212,255,.1);border-radius:8px;padding:6px">🔊</div>
+          <div style="font-size:10px;color:var(--c);margin-top:4px">Screener</div>
+          <div style="font-size:9px;color:var(--m)">Score + Clips</div>
+        </div>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,var(--c),var(--p));min-width:30px;opacity:.4">
+        </div>
+        <div style="text-align:center;min-width:100px">
+          <div style="font-size:20px;background:rgba(123,79,254,.1);border-radius:8px;padding:6px">🎯</div>
+          <div style="font-size:10px;color:var(--p);margin-top:4px">Hooks</div>
+          <div style="font-size:9px;color:var(--m)">Claude Copy</div>
+        </div>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,var(--p),var(--pk));min-width:30px;opacity:.4">
+        </div>
+        <div style="text-align:center;min-width:100px">
+          <div style="font-size:20px;background:rgba(255,63,164,.1);border-radius:8px;padding:6px">✂️</div>
+          <div style="font-size:10px;color:var(--pk);margin-top:4px">Editor</div>
+          <div style="font-size:9px;color:var(--m)">FFmpeg Forja</div>
+        </div>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,var(--pk),var(--g));min-width:30px;opacity:.4">
+        </div>
+        <div style="text-align:center;min-width:100px">
+          <div style="font-size:20px;background:rgba(0,255,178,.1);border-radius:8px;padding:6px">📐</div>
+          <div style="font-size:10px;color:var(--g);margin-top:4px">Variações</div>
+          <div style="font-size:9px;color:var(--m)">72/dia</div>
+        </div>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,var(--g),var(--y));min-width:30px;opacity:.4">
+        </div>
+        <div style="text-align:center;min-width:100px">
+          <div style="font-size:20px;background:rgba(255,214,0,.1);border-radius:8px;padding:6px">📊</div>
+          <div style="font-size:10px;color:var(--y);margin-top:4px">Analytics</div>
+          <div style="font-size:9px;color:var(--m)">ROAS Loop</div>
+        </div>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,var(--y),var(--p));min-width:30px;opacity:.4">
+        </div>
+        <div style="text-align:center;min-width:100px">
+          <div style="font-size:20px">🧬</div>
+          <div style="font-size:10px;color:var(--m);margin-top:4px">Strategist</div>
+          <div style="font-size:9px;color:var(--m)">Retroalimenta</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════ FERRAMENTAS ════════════════════ -->
+  <div id="tab-ferramentas" class="tab-content">
+    <div class="sh">
+      <div class="st">Ferramentas <span>Internas</span></div><span style="font-size:11px;color:var(--m)">Réplicas
+        adaptadas para iGaming do OpusClip e Captions.ai</span>
+    </div>
+
+    <div
+      style="background:rgba(123,79,254,.08);border:1px solid var(--p);border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:12px;color:var(--m)">
+      💡 <strong style="color:var(--t)">Estratégia:</strong> Em vez de depender de ferramentas externas (OpusClip =
+      $49/mês, Captions = $29/mês), o AIOS replica as funcionalidades críticas internamente, adaptadas para o
+      vocabulário e gatilhos do iGaming.
+    </div>
+
+    <div class="tool-split">
+      <!-- OPUS REPLICA -->
+      <div class="tool-panel">
+        <div class="tool-header">
+          <div class="tool-icon" style="background:rgba(0,212,255,.15)">🎬</div>
+          <div>
+            <div style="font-size:13px;font-weight:700">Live-IA <span
+                style="color:var(--m);font-weight:400;font-size:11px">— Réplica do OpusClip</span></div>
+            <div style="font-size:11px;color:var(--c)">Agent Screener em ação</div>
+          </div>
+        </div>
+        <div class="tool-body">
+          <div class="feature-row">
+            <div class="feat-icon" style="background:rgba(0,212,255,.1)">🎙️</div>
+            <div>
+              <div class="feat-title">Transcrição Automática<span class="diff-badge">Whisper</span></div>
+              <div class="feat-desc">Transcreve brutos de até 2h com timestamps precisos por palavra. Identifica tom:
+                excitado, tenso, comemorativo.</div>
+            </div>
+          </div>
+          <div class="feature-row">
+            <div class="feat-icon" style="background:rgba(0,212,255,.1)">⚡</div>
+            <div>
+              <div class="feat-title">Vira Score <span class="diff-badge">iGaming Adaptado</span></div>
+              <div class="feat-desc">Score 0–100 por segmento. Detecta palavras-gatilho: "green", "saque", "entrou",
+                "impossível". OpusClip usa NLP genérico — o nosso foca em apostas.</div>
+            </div>
+          </div>
+          <div class="feature-row">
+            <div class="feat-icon" style="background:rgba(0,212,255,.1)">✂️</div>
+            <div>
+              <div class="feat-title">Auto-Clip dos Momentos</div>
+              <div class="feat-desc">Top 10 momentos ranqueados por score. Cada clip com sugestão de duração (15s para
+                casa de aposta, 45s para expert).</div>
+            </div>
+          </div>
+          <div class="feature-row">
+            <div class="feat-icon" style="background:rgba(0,212,255,.1)">🔁</div>
+            <div>
+              <div class="feat-title">Loop de Melhoria Contínua</div>
+              <div class="feat-desc">Agent Analytics retroalimenta os critérios de score com base no CTR real dos vídeos
+                publicados.</div>
+            </div>
+          </div>
+          <div
+            style="margin-top:14px;padding:10px;background:rgba(0,212,255,.06);border-radius:8px;font-size:11px;color:var(--m)">
+            OpusClip não tem: Score específico iGaming, retroalimentação por ROAS, integração direta com pipeline de
+            edição.
+          </div>
+        </div>
+      </div>
+
+      <!-- CAPTIONS REPLICA -->
+      <div class="tool-panel">
+        <div class="tool-header">
+          <div class="tool-icon" style="background:rgba(123,79,254,.15)">✍️</div>
+          <div>
+            <div style="font-size:13px;font-weight:700">Studio-IA <span
+                style="color:var(--m);font-weight:400;font-size:11px">— Réplica do Captions.ai</span></div>
+            <div style="font-size:11px;color:var(--p)">Agent Editor em ação</div>
+          </div>
+        </div>
+        <div class="tool-body">
+          <div class="feature-row">
+            <div class="feat-icon" style="background:rgba(123,79,254,.12)">📝</div>
+            <div>
+              <div class="feat-title">Legendas Karaokê Dinâmicas<span class="diff-badge">iGaming Style</span></div>
+              <div class="feat-desc">Montserrat Black MAIÚSCULAS. Palavra por palavra com pop-up. Palavras-gatilho em
+                amarelo neon. Sem Captions: branco genérico.</div>
+            </div>
+          </div>
+          <div class="feature-row">
+            <div class="feat-icon" style="background:rgba(123,79,254,.12)">👁️</div>
+            <div>
+              <div class="feat-title">Eye Contact AI</div>
+              <div class="feat-desc">Correção de olhar para a câmera via IA. Mantém o expert "olhando para o espectador"
+                mesmo quando olha para a tela do jogo.</div>
+            </div>
+          </div>
+          <div class="feature-row">
+            <div class="feat-icon" style="background:rgba(123,79,254,.12)">🎯</div>
+            <div>
+              <div class="feat-title">Dicionário de Gatilhos<span class="diff-badge">Exclusivo</span></div>
+              <div class="feat-desc">Quando a IA ouve "green" → injeta overlay verde pulsante. "Saque" → chuva de
+                dinheiro. Totalmente configurável por operação.</div>
+            </div>
+          </div>
+          <div class="feature-row">
+            <div class="feat-icon" style="background:rgba(123,79,254,.12)">🎵</div>
+            <div>
+              <div class="feat-title">Trilha Sonora Automática</div>
+              <div class="feat-desc">Seleciona música pelo estilo da operação: Trap (Reals Bet), Eletrônico (Bingo Bet),
+                Lo-fi tenso (Aviator). BPM sobe 20% no CTA.</div>
+            </div>
+          </div>
+          <div
+            style="margin-top:14px;padding:10px;background:rgba(123,79,254,.06);border-radius:8px;font-size:11px;color:var(--m)">
+            Captions.ai não tem: Dicionário de gatilhos iGaming, trilha automática por nicho, integração com pipeline de
+            variações.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════ FONTES ════════════════════ -->
+  <div id="tab-fontes" class="tab-content">
+    <div class="sh">
+      <div class="st">Fontes de <span>Inteligência</span></div><span style="font-size:11px;color:var(--m)">De onde o
+        sistema se alimenta para operar</span>
+    </div>
+
+    <div class="g2">
+      <div>
+        <div
+          style="font-size:12px;font-weight:700;color:var(--m);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">
+          📥 Fontes de Vídeo (Inputs)</div>
+        <div class="fonte-card">
+          <div class="fonte-icon" style="background:rgba(255,63,164,.1)">🔴</div>
+          <div class="fonte-meta">
+            <div class="fonte-title">Lives e Gravações dos Experts</div>
+            <div class="fonte-desc">Transmissões ao vivo e gravações diretas de tela dos experts de Aviator, Roleta, e
+              streamers das casas de aposta.</div>
+            <div class="fonte-agent">→ Consome: Agent Screener</div>
+          </div>
+        </div>
+        <div class="fonte-card">
+          <div class="fonte-icon" style="background:rgba(0,212,255,.1)">📱</div>
+          <div class="fonte-meta">
+            <div class="fonte-title">Celular do Expert (UGC)</div>
+            <div class="fonte-desc">Gravações estilo User Generated Content — celular na mão, reação real, sem produção.
+              Formato mais convertedor para Meta Ads.</div>
+            <div class="fonte-agent">→ Consome: Agent Screener + Agent Editor</div>
+          </div>
+        </div>
+        <div class="fonte-card">
+          <div class="fonte-icon" style="background:rgba(123,79,254,.1)">📂</div>
+          <div class="fonte-meta">
+            <div class="fonte-title">Google Drive / Pasta Local</div>
+            <div class="fonte-desc">Upload em massa via link de pasta. O sistema enfileira automaticamente todos os .mp4
+              encontrados.</div>
+            <div class="fonte-agent">→ Consome: AIOS Chief (roteamento)</div>
+          </div>
+        </div>
+
+        <div
+          style="font-size:12px;font-weight:700;color:var(--m);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;margin-top:22px">
+          🧠 Fontes de Estratégia (Cérebro)</div>
+        <div class="fonte-card">
+          <div class="fonte-icon" style="background:rgba(0,255,178,.1)">📄</div>
+          <div class="fonte-meta">
+            <div class="fonte-title">PDFs e Docs de Estratégia</div>
+            <div class="fonte-desc">Documentos que você sobe manualmente: briefings semanais, estratégias de campanha,
+              playbooks de operação.</div>
+            <div class="fonte-agent">→ Consome: Agent Strategist (RAG com Gemini 1.5 Pro)</div>
+          </div>
+        </div>
+        <div class="fonte-card">
+          <div class="fonte-icon" style="background:rgba(255,214,0,.1)">🏆</div>
+          <div class="fonte-meta">
+            <div class="fonte-title">Banco de Hooks Validados</div>
+            <div class="fonte-desc">Histórico de hooks com CTR > 5% — salvo automaticamente pelo Agent Analytics. Usado
+              como few-shot no Claude.</div>
+            <div class="fonte-agent">→ Consome: Agent Hooks (Claude)</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div
+          style="font-size:12px;font-weight:700;color:var(--m);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">
+          📊 Fontes de Performance (Analytics)</div>
+        <div class="fonte-card">
+          <div class="fonte-icon" style="background:rgba(0,212,255,.1)">📘</div>
+          <div class="fonte-meta">
+            <div class="fonte-title">Meta Ads API (Graph API)</div>
+            <div class="fonte-desc">ROAS, CTR, CPM, Custo por Lead de cada variação publicada. Retroalimenta os presets
+              do Agent Editor automaticamente.</div>
+            <div class="fonte-agent">→ Consome: Agent Analytics → Agent Editor</div>
+          </div>
+        </div>
+        <div class="fonte-card">
+          <div class="fonte-icon" style="background:rgba(0,0,0,.3)">⚫</div>
+          <div class="fonte-meta">
+            <div class="fonte-title">TikTok Analytics API</div>
+            <div class="fonte-desc">Taxa de retenção por segundo, shares, replays. Ideal para ajustar o momento do CTA e
+              a curva de retenção do padrão ROCKET.</div>
+            <div class="fonte-agent">→ Consome: Agent Analytics → Agent Screener (ajusta scores)</div>
+          </div>
+        </div>
+        <div class="fonte-card">
+          <div class="fonte-icon" style="background:rgba(255,63,164,.1)">📸</div>
+          <div class="fonte-meta">
+            <div class="fonte-title">Instagram Insights</div>
+            <div class="fonte-desc">Alcance orgânico, saves, shares e retenção dos Reels. Fonte complementar para o
+              ciclo de feedback semanal.</div>
+            <div class="fonte-agent">→ Consome: Agent Analytics</div>
+          </div>
+        </div>
+
+        <div
+          style="font-size:12px;font-weight:700;color:var(--m);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;margin-top:22px">
+          🔍 Fontes de Mercado (Radar)</div>
+        <div class="fonte-card">
+          <div class="fonte-icon" style="background:rgba(123,79,254,.1)">🌐</div>
+          <div class="fonte-meta">
+            <div class="fonte-title">Concorrentes (Manual + Spider)</div>
+            <div class="fonte-desc">Análise manual de Reals de concorrentes iGaming. Fase 2: spider automático que
+              monitora novos criativos publicados.</div>
+            <div class="fonte-agent">→ Consome: Agent Radar (Fase 4) → Agent Strategist</div>
+          </div>
+        </div>
+        <div class="fonte-card">
+          <div class="fonte-icon" style="background:rgba(0,255,178,.1)">🔬</div>
+          <div class="fonte-meta">
+            <div class="fonte-title">Referências Globais (Stake, Blaze, VSL)</div>
+            <div class="fonte-desc">Padrões de grandes players internacionais iGaming — adaptados para o nicho BR com
+              vocabulário e gatilhos locais.</div>
+            <div class="fonte-agent">→ Consome: Agent Strategist → Cérebro (knowledge base)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════ CONCORRENTES ════════════════════ -->
+  <div id="tab-concorrentes" class="tab-content">
+    <div class="sh">
+      <div class="st">Análise de <span>Concorrentes</span></div><span style="font-size:11px;color:var(--m)">Por
+        categoria · Adaptado para iGaming BR</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+      <div class="cc">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="font-size:22px">🎬</div>
+          <div>
+            <div style="font-size:13px;font-weight:700">Opus.pro</div>
+            <div style="font-size:11px;color:var(--m)">Corte Automático</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"><span class="tag">Score de
+            Viralidade</span><span class="tag c">Auto-Clip</span></div>
+        <div style="font-size:11px;color:var(--m)">🔑 Adaptar: Score com gatilhos iGaming. Priorizar reação ao prêmio,
+          não apenas picos de volume.</div>
+      </div>
+      <div class="cc">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="font-size:22px">✍️</div>
+          <div>
+            <div style="font-size:13px;font-weight:700">Captions.ai</div>
+            <div style="font-size:11px;color:var(--m)">Legendas Dinâmicas</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"><span class="tag">Eye Contact AI</span><span
+            class="tag c">Pop-up Words</span><span class="tag g">B-Roll</span></div>
+        <div style="font-size:11px;color:var(--m)">🔑 Adaptar: Palavras-gatilho iGaming em amarelo pulsante. Zoom
+          automático em reações de ganho.</div>
+      </div>
+      <div class="cc">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="font-size:22px">📱</div>
+          <div>
+            <div style="font-size:13px;font-weight:700">TikTok Viral Pattern</div>
+            <div style="font-size:11px;color:var(--m)">Retenção Mobile</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"><span class="tag k">Hook 1s</span><span
+            class="tag">Loop Infinito</span><span class="tag c">Zooms</span></div>
+        <div style="font-size:11px;color:var(--m)">🔑 Primeiro frame = tela ganhando. Loop final leva ao início para
+          aumentar tempo de exibição.</div>
+      </div>
+      <div class="cc">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="font-size:22px">🎰</div>
+          <div>
+            <div style="font-size:13px;font-weight:700">Stake / Blaze</div>
+            <div style="font-size:11px;color:var(--m)">iGaming Global</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"><span class="tag g">Prova Social</span><span
+            class="tag k">FOMO</span></div>
+        <div style="font-size:11px;color:var(--m)">🔑 Expert como "celebridade local". Número do saque em fonte enorme.
+          CTA direto sem rodeios.</div>
+      </div>
+      <div class="cc">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="font-size:22px">⚡</div>
+          <div>
+            <div style="font-size:13px;font-weight:700">VSL Formula (US)</div>
+            <div style="font-size:11px;color:var(--m)">Vídeo de Vendas</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"><span class="tag"
+            style="color:var(--y);border-color:rgba(255,214,0,.3);background:rgba(255,214,0,.1)">PAS
+            Framework</span><span class="tag g">Autoridade</span></div>
+        <div style="font-size:11px;color:var(--m)">🔑 Para Experts: Dor (perdeu dinheiro solo) → Agitação → Solução
+          (método do expert).</div>
+      </div>
+      <div class="cc">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="font-size:22px">🤖</div>
+          <div>
+            <div style="font-size:13px;font-weight:700">Meta Ads iGaming BR</div>
+            <div style="font-size:11px;color:var(--m)">Benchmark Nacional</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"><span class="tag">Dark Post</span><span
+            class="tag c">UGC Style</span></div>
+        <div style="font-size:11px;color:var(--m)">🔑 Formato UGC converte mais que anúncio produzido. Celular na mão,
+          reação real, sem logo visível no início.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════ CURVA DE VÍDEO ════════════════════ -->
+  <div id="tab-curva" class="tab-content">
+    <div class="sh">
+      <div class="st">Curva de <span>Performance</span></div>
+    </div>
+    <div class="g2" style="margin-bottom:20px">
+      <div class="card">
+        <div class="ct">Anatomia do Vídeo Perfeito</div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span>🎣 HOOK
+              (0–3s)</span><span style="color:var(--g)">95/100</span></div>
+          <div class="sb">
+            <div class="sbf" style="width:95%;background:linear-gradient(90deg,var(--p),var(--c))"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span>🔥
+              DESENVOLVIMENTO (3–20s)</span><span style="color:var(--y)">60/100</span></div>
+          <div class="sb">
+            <div class="sbf" style="width:60%;background:linear-gradient(90deg,var(--y),var(--pk))"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span>📣 CTA (último
+              5s)</span><span style="color:var(--pk)">40/100</span></div>
+          <div class="sb">
+            <div class="sbf" style="width:40%;background:linear-gradient(90deg,var(--pk),var(--p))"></div>
+          </div>
+        </div>
+        <div
+          style="margin-top:14px;padding:10px;background:rgba(255,63,164,.07);border-radius:8px;border:1px solid rgba(255,63,164,.2);font-size:11px;color:var(--m)">
+          <span style="color:var(--pk);font-weight:600">⚠️ Diagnóstico:</span> Audiência cai aos 8s. Sem B-Roll no
+          desenvolvimento. CTA apenas narrado — precisa de overlay visual.
+        </div>
+      </div>
+      <div class="card">
+        <div class="ct">Padrões de Curva</div>
+        <div
+          style="background:var(--s2);border-radius:9px;padding:12px;border-left:3px solid var(--g);margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--g)">🏆 ROCKET (Expert)</div>
+          <div style="font-size:11px;color:var(--m);margin-top:3px">Hook explosivo → Escada crescente → CTA no pico.
+            Retenção 80%+.</div>
+        </div>
+        <div
+          style="background:var(--s2);border-radius:9px;padding:12px;border-left:3px solid var(--y);margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--y)">⚡ FLASH (Casa de Aposta)</div>
+          <div style="font-size:11px;color:var(--m);margin-top:3px">0s = resultado. 5s = método. 10s = CTA. BPM alto.
+            Vídeos 10–15s.</div>
+        </div>
+        <div style="background:var(--s2);border-radius:9px;padding:12px;border-left:3px solid var(--pk)">
+          <div style="font-size:12px;font-weight:700;color:var(--pk)">📉 QUEDA (Evitar)</div>
+          <div style="font-size:11px;color:var(--m);margin-top:3px">Drop aos 3s. Agent Editor corrige com zoom
+            automático no segundo 3.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">Regras Automáticas do Agent Editor (FFmpeg Rules)</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;font-size:12px">
+        <div style="background:var(--s2);border-radius:8px;padding:12px">📌 Se drop &gt; 30% aos 3s → reinserção de zoom
+          automático</div>
+        <div style="background:var(--s2);border-radius:8px;padding:12px">📌 Se queda no segundo 15 → B-Roll automático
+          injeta overlay</div>
+        <div style="background:var(--s2);border-radius:8px;padding:12px">📌 CTA sempre nos últimos 5s como overlay em
+          tela + narrado</div>
+        <div style="background:var(--s2);border-radius:8px;padding:12px">📌 Música sobe +20% BPM na reta final (últimos
+          4s)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════ REVISOR ════════════════════ -->
+  <div id="tab-revisor" class="tab-content">
+    <div class="sh">
+      <div class="st">Revisor do <span>Processo</span></div><span style="font-size:11px;color:var(--m)">Diagnóstico
+        automático + sugestões de melhoria</span>
+    </div>
+    <div class="rv ok">
+      <div style="font-size:20px">✅</div>
+      <div>
+        <div style="font-weight:600;font-size:13px;margin-bottom:3px">Estrutura de 6 Pilares Definida</div>
+        <div style="font-size:11px;color:var(--m)">Radar, Live-IA, Studio-IA, Cérebro, Automation, Cofre mapeados com
+          agentes e fluxos.</div>
+      </div><span class="rv-b ok">OK</span>
+    </div>
+    <div class="rv ok">
+      <div style="font-size:20px">✅</div>
+      <div>
+        <div style="font-weight:600;font-size:13px;margin-bottom:3px">SDKs Instalados (Claude + Gemini + LangChain)
+        </div>
+        <div style="font-size:11px;color:var(--m)">packages/bingo-engine com @anthropic-ai/sdk, @google/generative-ai e
+          langchain prontos.</div>
+      </div><span class="rv-b ok">OK</span>
+    </div>
+    <div class="rv w">
+      <div style="font-size:20px">⚠️</div>
+      <div>
+        <div style="font-weight:600;font-size:13px;margin-bottom:3px">Chaves de API Pendentes no .env</div>
+        <div style="font-size:11px;color:var(--m)">ANTHROPIC_API_KEY e GEMINI_API_KEY não preenchidas. Chat Mode e
+          agentes bloqueados.</div>
+      </div><span class="rv-b w">PENDENTE</span>
+    </div>
+    <div class="rv">
+      <div style="font-size:20px">🔧</div>
+      <div>
+        <div style="font-weight:600;font-size:13px;margin-bottom:3px">Motor de Renderização (FFmpeg) Não Instalado</div>
+        <div style="font-size:11px;color:var(--m)">Agent Editor precisa de fluent-ffmpeg + @ffmpeg-installer/ffmpeg para
+          produzir os .mp4 finais.</div>
+      </div><span class="rv-b">CRÍTICO</span>
+    </div>
+    <div class="rv">
+      <div style="font-size:20px">📋</div>
+      <div>
+        <div style="font-weight:600;font-size:13px;margin-bottom:3px">Dicionário de Gatilhos Não Modelado</div>
+        <div style="font-size:11px;color:var(--m)">Tabela SQL trigger_words → asset_file não existe. Agent Editor não
+          sabe qual PNG injetar em "green" ou "saque".</div>
+      </div><span class="rv-b">BLOQUEANTE</span>
+    </div>
+    <div class="rv w">
+      <div style="font-size:20px">📊</div>
+      <div>
+        <div style="font-weight:600;font-size:13px;margin-bottom:3px">Loop de Feedback Ausente</div>
+        <div style="font-size:11px;color:var(--m)">Agent Analytics não conectado ao Meta Ads API. Sistema produz mas não
+          aprende. Fase 2.</div>
+      </div><span class="rv-b w">FASE 2</span>
+    </div>
+    <div
+      style="background:linear-gradient(135deg,rgba(123,79,254,.1),rgba(0,212,255,.06));border:1px solid var(--p);border-radius:14px;padding:20px;margin-top:4px">
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;margin-bottom:12px">🚀 Próximos
+        Passos Recomendados</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px">
+        <div style="background:rgba(0,0,0,.3);border-radius:7px;padding:10px"><span
+            style="color:var(--p);font-weight:700">1. </span>Preencher ANTHROPIC_API_KEY e GEMINI_API_KEY no .env</div>
+        <div style="background:rgba(0,0,0,.3);border-radius:7px;padding:10px"><span
+            style="color:var(--p);font-weight:700">2. </span>Instalar fluent-ffmpeg para o Agent Editor</div>
+        <div style="background:rgba(0,0,0,.3);border-radius:7px;padding:10px"><span
+            style="color:var(--p);font-weight:700">3. </span>Modelar tabela SQL do Dicionário de Gatilhos</div>
+        <div style="background:rgba(0,0,0,.3);border-radius:7px;padding:10px"><span
+            style="color:var(--p);font-weight:700">4. </span>Codificar Agent Screener (Whisper → Score)</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(n, b) {
+      document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.getElementById('tab-' + n).classList.add('active');
+    }
+    window.addEventListener('load', () => {
+      document.querySelectorAll('.sbf').forEach(el => { const w = el.style.width; el.style.width = '0'; setTimeout(() => el.style.width = w, 300) });
+    });
+  </script>
+</body>
+
+</html>

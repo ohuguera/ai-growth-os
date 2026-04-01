@@ -1,0 +1,30 @@
+{
+    "name": "@aiox/bingo-engine",
+    "version": "1.0.0",
+    "description": "Bingo! Fábrica de Criativos 2.0 - Motor de Inteligência Artificial (Claude + Gemini + LangChain)",
+    "main": "src/index.js",
+    "type": "module",
+    "scripts": {
+        "start": "node src/index.js",
+        "chat": "node src/chat.js",
+        "test": "echo \"Motor de criativos pronto.\""
+    },
+    "dependencies": {
+        "@anthropic-ai/sdk": "^0.38.0",
+        "@google/generative-ai": "^0.24.0",
+        "@langchain/anthropic": "^0.3.14",
+        "@langchain/google-genai": "^0.2.8",
+        "langchain": "^0.3.27",
+        "dotenv": "^16.5.0"
+    },
+    "keywords": [
+        "bingo",
+        "igaming",
+        "criativos",
+        "claude",
+        "gemini",
+        "langchain"
+    ],
+    "author": "Hugo (ohuguera)",
+    "license": "MIT"
+}
