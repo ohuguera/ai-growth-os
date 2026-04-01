@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -6,6 +6,9 @@ import uuid, os, json, shutil
 from transcriber import transcribe_video
 from scorer import score_moments
 from processor import process_clip
+
+CHUNK_DIR = "chunks"
+os.makedirs(CHUNK_DIR, exist_ok=True)
 
 app = FastAPI(title="Cortador de Lives — BINGOBET")
 
@@ -49,6 +52,101 @@ def load_job(job_id: str):
 def root():
     return {"status": "ok", "service": "Cortador de Lives BINGOBET"}
 
+
+# ──────────────────────────────────────────
+# Chunked Upload (para vídeos grandes)
+# ──────────────────────────────────────────
+
+class InitUploadRequest(BaseModel):
+    filename: str
+    total_chunks: int
+
+
+@app.post("/upload/init")
+def upload_init(req: InitUploadRequest):
+    """Inicializa um job de upload chunked."""
+    job_id = str(uuid.uuid4())[:8]
+    ext = os.path.splitext(req.filename)[1] or ".mp4"
+    chunk_folder = f"{CHUNK_DIR}/{job_id}"
+    os.makedirs(chunk_folder, exist_ok=True)
+
+    save_job(job_id, {
+        "id": job_id,
+        "status": "uploading",
+        "filename": req.filename,
+        "ext": ext,
+        "total_chunks": req.total_chunks,
+        "received_chunks": 0,
+        "video_path": "",
+        "segments": [],
+        "moments": [],
+        "clips": []
+    })
+
+    return {"job_id": job_id, "total_chunks": req.total_chunks}
+
+
+@app.post("/upload/chunk")
+async def upload_chunk(
+    job_id: str = Form(...),
+    chunk_index: int = Form(...),
+    total_chunks: int = Form(...),
+    file: UploadFile = File(...)
+):
+    """Recebe um chunk e salva em disco."""
+    job = load_job(job_id)
+    if not job:
+        return {"error": "Job não encontrado"}
+
+    chunk_path = f"{CHUNK_DIR}/{job_id}/chunk_{chunk_index:05d}"
+    with open(chunk_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    job["received_chunks"] = job.get("received_chunks", 0) + 1
+    save_job(job_id, job)
+
+    return {
+        "job_id": job_id,
+        "chunk_index": chunk_index,
+        "received": job["received_chunks"],
+        "total": total_chunks
+    }
+
+
+@app.post("/upload/finalize")
+def upload_finalize(body: dict):
+    """Concatena todos os chunks no arquivo final."""
+    job_id = body.get("job_id")
+    job = load_job(job_id)
+    if not job:
+        return {"error": "Job não encontrado"}
+
+    ext = job.get("ext", ".mp4")
+    video_path = f"{UPLOAD_DIR}/{job_id}{ext}"
+    chunk_folder = f"{CHUNK_DIR}/{job_id}"
+
+    chunk_files = sorted(
+        [f for f in os.listdir(chunk_folder) if f.startswith("chunk_")],
+        key=lambda x: int(x.split("_")[1])
+    )
+
+    with open(video_path, "wb") as out:
+        for chunk_file in chunk_files:
+            with open(f"{chunk_folder}/{chunk_file}", "rb") as cf:
+                shutil.copyfileobj(cf, out)
+
+    shutil.rmtree(chunk_folder)
+
+    job["status"] = "uploaded"
+    job["video_path"] = video_path
+    save_job(job_id, job)
+
+    return {"job_id": job_id, "status": "uploaded", "filename": job["filename"]}
+
+
+# ──────────────────────────────────────────
+# Upload simples (compatibilidade legada)
+# ──────────────────────────────────────────
 
 @app.post("/upload")
 async def upload_video(file: UploadFile = File(...)):

@@ -10,6 +10,51 @@ export async function uploadVideo(file: File): Promise<{ job_id: string; filenam
   return res.json()
 }
 
+const CHUNK_SIZE = 5 * 1024 * 1024 // 5MB
+
+export async function uploadVideoChunked(
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<{ job_id: string; filename: string }> {
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE)
+
+  // 1. Inicializa o job
+  const initRes = await fetch(`${BASE}/upload/init`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename: file.name, total_chunks: totalChunks }),
+  })
+  if (!initRes.ok) throw new Error('Falha ao inicializar upload')
+  const { job_id } = await initRes.json()
+
+  // 2. Envia chunks sequencialmente
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * CHUNK_SIZE
+    const chunk = file.slice(start, start + CHUNK_SIZE)
+
+    const form = new FormData()
+    form.append('job_id', job_id)
+    form.append('chunk_index', String(i))
+    form.append('total_chunks', String(totalChunks))
+    form.append('file', chunk, file.name)
+
+    const res = await fetch(`${BASE}/upload/chunk`, { method: 'POST', body: form })
+    if (!res.ok) throw new Error(`Falha no chunk ${i + 1}/${totalChunks}`)
+
+    if (onProgress) onProgress(Math.round(((i + 1) / totalChunks) * 100))
+  }
+
+  // 3. Finaliza — concatena os chunks no backend
+  const finalRes = await fetch(`${BASE}/upload/finalize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ job_id }),
+  })
+  if (!finalRes.ok) throw new Error('Falha ao finalizar upload')
+
+  return finalRes.json()
+}
+
 export async function startTranscription(jobId: string): Promise<void> {
   const res = await fetch(`${BASE}/transcribe/${jobId}`, { method: 'POST' })
   if (!res.ok) throw new Error('Falha ao iniciar transcrição')

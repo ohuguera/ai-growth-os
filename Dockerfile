@@ -17,10 +17,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY cortador-backend/ .
 
 # Diretórios de trabalho
-RUN mkdir -p uploads outputs jobs
+RUN mkdir -p uploads outputs jobs chunks
 
 EXPOSE 8000
 
 ARG CACHEBUST=2
 LABEL version="2"
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--http", "h11"]
