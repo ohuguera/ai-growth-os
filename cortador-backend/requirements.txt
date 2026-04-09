@@ -1,5 +1,6 @@
-fastapi==0.135.1
-uvicorn==0.42.0
+fastapi==0.115.12
+starlette==0.41.3
+uvicorn==0.32.1
 python-multipart==0.0.22
 faster-whisper==1.1.1
 ffmpeg-python==0.2.0

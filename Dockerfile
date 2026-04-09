@@ -7,6 +7,8 @@ COPY --from=ffmpeg-base /ffprobe /usr/local/bin/ffprobe
 
 WORKDIR /app
 
+ENV PYTHONUNBUFFERED=1
+
 # Copia requirements do cortador-backend
 COPY cortador-backend/requirements.txt .
 
@@ -21,6 +23,6 @@ RUN mkdir -p uploads outputs jobs chunks
 
 EXPOSE 8000
 
-ARG CACHEBUST=4
-LABEL version="4"
+ARG CACHEBUST=5
+LABEL version="5"
 CMD ["/bin/sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --http h11"]
