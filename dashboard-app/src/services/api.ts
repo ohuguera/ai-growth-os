@@ -73,6 +73,7 @@ export interface ProcessParams {
   cta: string
   caption_position: 'top' | 'middle' | 'bottom'
   watermark: boolean
+  use_cta_video?: boolean
 }
 
 export async function processClips(params: ProcessParams): Promise<void> {
@@ -86,4 +87,12 @@ export async function processClips(params: ProcessParams): Promise<void> {
 
 export function downloadUrl(clipId: string): string {
   return `${BASE}/download/${clipId}`
+}
+
+export async function uploadCtaVideo(jobId: string, file: File): Promise<{ status: string }> {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await fetch(`${BASE}/upload/cta-video/${jobId}`, { method: 'POST', body: form })
+  if (!res.ok) throw new Error('Falha no upload do CTA')
+  return res.json()
 }

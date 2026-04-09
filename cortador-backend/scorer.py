@@ -270,3 +270,79 @@ def create_clip_candidates(segments: List[Dict], target_durations=[30, 45, 60]) 
 
 def score_moments(segments: List[Dict]) -> List[Dict]:
     return create_clip_candidates(segments)
+
+
+# ── Analise com Claude AI ────────────────────────────────────────────────────
+
+import os
+import json as _json
+
+
+def analyze_with_ai(segments: list) -> list:
+    """Usa Claude API para categorizar momentos por tipo: hook/desenvolvimento/tensao/cta"""
+    import anthropic
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        print("[AI] ANTHROPIC_API_KEY nao configurada -- pulando analise IA")
+        return []
+
+    # Monta texto da transcricao com timestamps
+    transcript_text = ""
+    for seg in segments[:200]:  # limite de tokens
+        transcript_text += f"[{seg['start']:.1f}s-{seg['end']:.1f}s] {seg['text']}\n"
+
+    prompt = f"""Voce e um especialista em analise de lives de iGaming (cassino online, apostas).
+Analise a transcricao abaixo e identifique os MELHORES momentos para criar clipes virais.
+
+Para cada momento, classifique em UMA categoria:
+- HOOK: primeiros 3-5 segundos que prendem atencao imediata (surpresa, reacao forte, ganho)
+- DESENVOLVIMENTO: conteudo de valor, estrategia, explicacao envolvente (15-60 segundos)
+- TENSAO: momento de suspense, aposta alta, espera pelo resultado
+- CTA: chamada para acao, convite para seguir, cadastro, bonus
+
+Retorne APENAS um JSON valido no formato:
+{{
+  "moments": [
+    {{
+      "start": <float segundos>,
+      "end": <float segundos>,
+      "category": "hook|desenvolvimento|tensao|cta",
+      "score": <int 0-99>,
+      "hook_text": "<texto sugerido para gancho -- max 8 palavras>",
+      "reason": "<motivo em 1 frase>"
+    }}
+  ]
+}}
+
+Regras:
+- Retorne entre 5 e 15 momentos
+- Duracao minima: 15s, maxima: 60s
+- Prefira momentos com reacoes fortes, ganhos, ou valor informativo
+- score 90-99: viral garantido, 70-89: muito bom, 50-69: bom
+
+TRANSCRICAO:
+{transcript_text}
+"""
+
+    client = anthropic.Anthropic(api_key=api_key)
+    try:
+        message = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=2000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        content = message.content[0].text.strip()
+        # Extrai JSON do response
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0].strip()
+
+        data = _json.loads(content)
+        moments = data.get("moments", [])
+        print(f"[AI] {len(moments)} momentos detectados pela IA")
+        return moments
+    except Exception as e:
+        print(f"[AI] Erro na analise: {e}")
+        return []

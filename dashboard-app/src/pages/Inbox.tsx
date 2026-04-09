@@ -89,6 +89,10 @@ export default function Inbox({ navigate }: Props) {
 
   async function doUpload(liveTitle: string) {
     if (!file) return
+    if (file.size > 200 * 1024 * 1024) {
+      setError('Video muito grande. Limite: 200MB.')
+      return
+    }
     setError(null)
     setUploading(true)
     setUploadPct(0)

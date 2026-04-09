@@ -5,3 +5,4 @@ python-multipart==0.0.22
 faster-whisper==1.1.1
 ffmpeg-python==0.2.0
 requests
+anthropic>=0.50.0

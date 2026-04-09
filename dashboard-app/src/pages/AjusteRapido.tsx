@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { ArrowLeft, Download, RotateCcw } from 'lucide-react'
-import { getJob, processClips, downloadUrl } from '../services/api'
+import { getJob, processClips, downloadUrl, uploadCtaVideo } from '../services/api'
 import { EXPERTS } from '../data/experts'
 import type { ExpertId, Clip, Moment, Page } from '../types'
 
@@ -29,6 +29,9 @@ export default function AjusteRapido({ jobId, clipId, expertId, navigate }: Prop
   const [watermark, setWatermark] = useState(true)
   const [trimStart, setTrimStart] = useState(0)
   const [trimEnd, setTrimEnd] = useState(0)
+  const [ctaFile, setCtaFile] = useState<File | null>(null)
+  const [ctaUploading, setCtaUploading] = useState(false)
+  const ctaRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     getJob(jobId)
@@ -344,6 +347,51 @@ export default function AjusteRapido({ jobId, clipId, expertId, navigate }: Prop
               <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-secondary)' }}>
                 Duração: {Math.round(trimEnd - trimStart)}s
               </div>
+            </div>
+
+            {/* Upload de CTA Video */}
+            <div style={{ ...controlCard }}>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
+                Video CTA (opcional)
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 10 }}>
+                Sera concatenado ao final do clipe automaticamente
+              </div>
+              <input
+                ref={ctaRef}
+                type="file"
+                accept="video/*"
+                style={{ display: 'none' }}
+                onChange={async (e) => {
+                  const f = e.target.files?.[0]
+                  if (!f) return
+                  setCtaFile(f)
+                  setCtaUploading(true)
+                  try {
+                    await uploadCtaVideo(jobId, f)
+                  } catch (err) {
+                    console.error('CTA upload error:', err)
+                  } finally {
+                    setCtaUploading(false)
+                  }
+                }}
+              />
+              {ctaFile ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#10B981' }}>
+                  {ctaFile.name} {ctaUploading ? '(enviando...)' : '(pronto)'}
+                  <button onClick={() => { setCtaFile(null); if (ctaRef.current) ctaRef.current.value = '' }}
+                    style={{ color: '#EF4444', fontSize: 11, cursor: 'pointer', background: 'none', border: 'none' }}>
+                    remover
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => ctaRef.current?.click()}
+                  style={{ padding: '6px 14px', background: 'var(--bg-surface)', color: 'var(--text-primary)', borderRadius: 6, fontSize: 12, border: '1px solid var(--border)', cursor: 'pointer' }}
+                >
+                  + Selecionar video CTA
+                </button>
+              )}
             </div>
 
             {/* Actions */}

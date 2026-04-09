@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uuid, os, json, shutil
 from transcriber import transcribe_video
-from scorer import score_moments
+from scorer import score_moments, analyze_with_ai
 from processor import process_clip
 
 CHUNK_DIR = "chunks"
@@ -188,14 +188,45 @@ async def transcribe(job_id: str, background_tasks: BackgroundTasks):
 def _run_transcription(job_id: str, video_path: str):
     job = load_job(job_id)
     try:
-        segments = transcribe_video(video_path)
-        moments = score_moments(segments)
+        # Progresso de transcricao
+        def on_progress(pct):
+            j = load_job(job_id)
+            if j:
+                j["transcription_progress"] = pct
+                save_job(job_id, j)
+
+        segments = transcribe_video(video_path, progress_cb=on_progress)
+
+        # Scoring por keywords (rapido)
+        moments_kw = score_moments(segments)
+
+        # Analise IA (Claude) se disponivel
+        ai_moments = analyze_with_ai(segments)
+
+        # Merge: preferir momentos IA, complementar com keywords
+        if ai_moments:
+            # Converte momentos IA para formato padrao
+            moments = []
+            for m in ai_moments:
+                moments.append({
+                    "start": m["start"],
+                    "end": m["end"],
+                    "score": m["score"],
+                    "text": m.get("reason", ""),
+                    "natural_hook": m.get("hook_text", ""),
+                    "category": m.get("category", "desenvolvimento"),
+                })
+        else:
+            moments = moments_kw
+
         job["status"] = "ready"
         job["segments"] = segments
         job["moments"] = moments
+        job["transcription_progress"] = 100
     except Exception as e:
         job["status"] = "error"
         job["error"] = str(e)
+        print(f"[Transcription Error] {e}")
     save_job(job_id, job)
 
 
@@ -227,6 +258,7 @@ class ProcessRequest(BaseModel):
     cta: str = ""
     caption_position: str = "middle"  # top | middle | bottom
     watermark: bool = True
+    use_cta_video: bool = True
 
 
 @app.post("/process")
@@ -248,12 +280,13 @@ async def process(req: ProcessRequest, background_tasks: BackgroundTasks):
         req.hook,
         req.cta,
         req.caption_position,
-        req.watermark
+        req.watermark,
+        job.get("cta_video_path") if req.use_cta_video else None,
     )
     return {"job_id": req.job_id, "status": "processing"}
 
 
-def _run_processing(job_id, video_path, moments, hook, cta, caption_position, watermark):
+def _run_processing(job_id, video_path, moments, hook, cta, caption_position, watermark, cta_video_path=None):
     job = load_job(job_id)
     clips = []
 
@@ -261,7 +294,7 @@ def _run_processing(job_id, video_path, moments, hook, cta, caption_position, wa
         clip_id = f"{job_id}_clip_{i + 1}"
         output_path = f"{OUTPUT_DIR}/{clip_id}.mp4"
 
-        # Usa hook natural se o usuário optou por isso
+        # Usa hook natural se o usuario optou por isso
         effective_hook = moment.get("natural_hook", "") if moment.get("use_natural_hook") else hook
 
         try:
@@ -274,7 +307,8 @@ def _run_processing(job_id, video_path, moments, hook, cta, caption_position, wa
                 cta=cta,
                 caption_position=caption_position,
                 watermark=watermark,
-                segments=job.get("segments", [])
+                segments=job.get("segments", []),
+                cta_video_path=cta_video_path,
             )
             clips.append({
                 "id": clip_id,
@@ -282,6 +316,7 @@ def _run_processing(job_id, video_path, moments, hook, cta, caption_position, wa
                 "start": moment["start"],
                 "end": moment["end"],
                 "score": moment.get("score", 0),
+                "category": moment.get("category", "desenvolvimento"),
                 "status": "done"
             })
         except Exception as e:
@@ -294,6 +329,25 @@ def _run_processing(job_id, video_path, moments, hook, cta, caption_position, wa
     job["clips"] = clips
     job["status"] = "done"
     save_job(job_id, job)
+
+
+@app.post("/upload/cta-video/{job_id}")
+async def upload_cta_video(job_id: str, file: UploadFile = File(...)):
+    """Upload de video CTA para concatenar ao final dos clipes."""
+    job = load_job(job_id)
+    if not job:
+        return {"error": "Job nao encontrado"}
+
+    ext = os.path.splitext(file.filename)[1] or ".mp4"
+    cta_path = f"{UPLOAD_DIR}/{job_id}_cta{ext}"
+
+    with open(cta_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    job["cta_video_path"] = cta_path
+    save_job(job_id, job)
+
+    return {"job_id": job_id, "cta_video_path": cta_path, "status": "cta_uploaded"}
 
 
 @app.get("/download/{clip_id}")

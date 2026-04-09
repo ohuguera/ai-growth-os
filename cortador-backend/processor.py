@@ -210,7 +210,8 @@ def process_clip(
     cta: str,
     caption_position: str,
     watermark: bool,
-    segments: List[Dict]
+    segments: List[Dict],
+    cta_video_path: str = None,
 ):
     duration = round(end - start, 2)
     ass_path = None
@@ -261,5 +262,45 @@ def process_clip(
 
     if result.returncode != 0:
         raise Exception(f"FFmpeg error: {result.stderr[-500:]}")
+
+    # Concatenar video CTA ao final do clipe se disponivel
+    if cta_video_path and os.path.exists(cta_video_path):
+        tmp_main = output_path + ".tmp_main.mp4"
+        os.rename(output_path, tmp_main)
+
+        # Reescala CTA para 1080x1920
+        tmp_cta = output_path + ".tmp_cta.mp4"
+        cmd_cta = [
+            "ffmpeg", "-y", "-i", cta_video_path,
+            "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+            "-c:a", "aac", "-b:a", "128k",
+            tmp_cta
+        ]
+        subprocess.run(cmd_cta, capture_output=True)
+
+        # Lista de concat
+        concat_list = output_path + ".concat.txt"
+        with open(concat_list, "w") as f:
+            f.write(f"file '{os.path.abspath(tmp_main)}'\n")
+            f.write(f"file '{os.path.abspath(tmp_cta)}'\n")
+
+        cmd_concat = [
+            "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+            "-i", concat_list,
+            "-c", "copy",
+            output_path
+        ]
+        result_concat = subprocess.run(cmd_concat, capture_output=True, text=True)
+
+        # Cleanup
+        for tmp_file in [tmp_main, tmp_cta, concat_list]:
+            try:
+                os.unlink(tmp_file)
+            except Exception:
+                pass
+
+        if result_concat.returncode != 0:
+            print(f"[CTA] Falha ao concatenar CTA: {result_concat.stderr[-200:]}")
 
     print(f"[FFmpeg] Clipe salvo: {output_path}")

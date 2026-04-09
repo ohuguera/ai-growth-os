@@ -3,21 +3,22 @@ import { getJob, processClips } from '../services/api'
 import { EXPERTS, PRESETS } from '../data/experts'
 import type { ExpertId, PresetId, Page, Moment } from '../types'
 
+type Phase = 'upload' | 'transcribe' | 'ai' | 'moments' | 'process' | 'done'
+
 interface Step {
   label: string
   detail: string
-  phase: 'upload' | 'transcribe' | 'moments' | 'process' | 'done'
+  phase: Phase
 }
 
 const STEPS: Step[] = [
   { phase: 'upload',     label: 'Upload concluído',              detail: 'Vídeo recebido pelo servidor' },
-  { phase: 'transcribe', label: 'Transcrevendo com IA',          detail: 'Whisper está analisando o áudio...' },
+  { phase: 'transcribe', label: 'Transcrevendo com IA',          detail: 'Whisper large-v3 analisando o áudio...' },
+  { phase: 'ai',         label: 'Analisando com IA',             detail: 'Claude detectando hooks, desenvolvimento e CTAs...' },
   { phase: 'moments',    label: 'Detectando melhores momentos',  detail: 'Identificando picos de engajamento...' },
   { phase: 'process',    label: 'Gerando cortes',                detail: 'FFmpeg aplicando identidade e legendas...' },
   { phase: 'done',       label: 'Cortes prontos',                detail: 'Tudo certo! Redirecionando...' },
 ]
-
-type Phase = Step['phase']
 
 function phaseIndex(p: Phase): number {
   return STEPS.findIndex(s => s.phase === p)
@@ -37,6 +38,7 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, na
   const [phase, setPhase] = useState<Phase>('upload')
   const [error, setError] = useState<string | null>(null)
   const [momentCount, setMomentCount] = useState<number | null>(null)
+  const [transcriptionProgress, setTranscriptionProgress] = useState(0)
   const processed = useRef(false)
 
   useEffect(() => {
@@ -50,8 +52,19 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, na
 
         if (job.status === 'transcribing') {
           setPhase('transcribe')
+          // Mostrar progresso se disponivel
+          if (job.transcription_progress !== undefined) {
+            setTranscriptionProgress(job.transcription_progress)
+          }
         } else if (job.status === 'ready' && !processed.current) {
           processed.current = true
+          setTranscriptionProgress(100)
+
+          // Fase IA visual
+          setPhase('ai')
+          await new Promise(r => setTimeout(r, 1000))
+          if (!alive) return
+
           setPhase('moments')
           setMomentCount(job.moments.length)
 
@@ -209,6 +222,14 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, na
                   {active && (
                     <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
                       {step.detail}
+                    </div>
+                  )}
+                  {step.phase === 'transcribe' && phase === 'transcribe' && transcriptionProgress > 0 && transcriptionProgress < 100 && (
+                    <div style={{ marginTop: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
+                      Transcrevendo... {transcriptionProgress}%
+                      <div style={{ height: 4, background: '#1e293b', borderRadius: 2, marginTop: 4 }}>
+                        <div style={{ height: '100%', width: `${transcriptionProgress}%`, background: expert.color, borderRadius: 2, transition: 'width 0.5s ease' }} />
+                      </div>
                     </div>
                   )}
                 </div>

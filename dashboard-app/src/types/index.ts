@@ -38,6 +38,7 @@ export interface Moment {
   score: number
   text: string
   natural_hook?: string
+  category?: 'hook' | 'desenvolvimento' | 'tensao' | 'cta'
 }
 
 export interface Clip {
@@ -59,6 +60,8 @@ export interface BackendJob {
   moments: Moment[]
   clips: Clip[]
   error?: string
+  transcription_progress?: number
+  cta_video_path?: string
 }
 
 // ── Editor de Criativos ──────────────────────────
