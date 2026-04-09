@@ -1,6 +1,6 @@
 import type { BackendJob } from '../types'
 
-const BASE = (import.meta as { env: Record<string, string> }).env.VITE_CORTADOR_API_URL || 'https://ai-growth-os-production-5989.up.railway.app'
+const BASE = (import.meta as { env: Record<string, string> }).env.VITE_CORTADOR_API_URL || 'https://ai-growth-os-production-bf81.up.railway.app'
 
 export async function uploadVideo(file: File): Promise<{ job_id: string; filename: string }> {
   const form = new FormData()
