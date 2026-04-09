@@ -21,6 +21,6 @@ RUN mkdir -p uploads outputs jobs chunks
 
 EXPOSE 8000
 
-ARG CACHEBUST=2
-LABEL version="2"
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--http", "h11"]
+ARG CACHEBUST=3
+LABEL version="3"
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --http h11
