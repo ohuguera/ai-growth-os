@@ -23,6 +23,8 @@ RUN mkdir -p uploads outputs jobs chunks
 
 EXPOSE 8000
 
-ARG CACHEBUST=5
-LABEL version="5"
-CMD ["/bin/sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --http h11"]
+ARG CACHEBUST=6
+LABEL version="6"
+COPY cortador-backend/start.sh .
+RUN chmod +x start.sh
+CMD ["/bin/sh", "start.sh"]
