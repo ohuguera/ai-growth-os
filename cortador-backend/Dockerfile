@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Criar diretórios de trabalho
-RUN mkdir -p uploads outputs jobs
+RUN mkdir -p uploads outputs jobs chunks
 
 # Pré-baixar modelo Whisper base no build (evita download na primeira request)
 RUN python -c "import whisper; whisper.load_model('base')"

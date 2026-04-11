@@ -6,3 +6,4 @@ faster-whisper==1.1.1
 ffmpeg-python==0.2.0
 requests
 anthropic>=0.50.0
+boto3>=1.35.0

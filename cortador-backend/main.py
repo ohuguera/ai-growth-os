@@ -1,11 +1,12 @@
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 import uuid, os, json, shutil
 from transcriber import transcribe_video
 from scorer import score_moments, analyze_with_ai
 from processor import process_clip
+import r2_storage
 
 CHUNK_DIR = "chunks"
 os.makedirs(CHUNK_DIR, exist_ok=True)
@@ -137,8 +138,13 @@ def upload_finalize(body: dict):
 
     shutil.rmtree(chunk_folder)
 
+    r2_key = None
+    if r2_storage.is_available():
+        r2_key = r2_storage.upload(video_path, f"uploads/{job_id}{ext}")
+
     job["status"] = "uploaded"
     job["video_path"] = video_path
+    job["r2_key"] = r2_key
     save_job(job_id, job)
 
     return {"job_id": job_id, "status": "uploaded", "filename": job["filename"]}
@@ -158,10 +164,15 @@ async def upload_video(file: UploadFile = File(...)):
     with open(video_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
+    r2_key = None
+    if r2_storage.is_available():
+        r2_key = r2_storage.upload(video_path, f"uploads/{job_id}{ext}")
+
     save_job(job_id, {
         "id": job_id,
         "status": "uploaded",
         "video_path": video_path,
+        "r2_key": r2_key,
         "filename": file.filename,
         "segments": [],
         "moments": [],
@@ -187,6 +198,10 @@ async def transcribe(job_id: str, background_tasks: BackgroundTasks):
 
 def _run_transcription(job_id: str, video_path: str):
     job = load_job(job_id)
+    # Se arquivo local sumiu (Railway reiniciou) e R2 disponível, restaura
+    if not os.path.exists(video_path) and job.get("r2_key") and r2_storage.is_available():
+        print(f"[R2] Restaurando vídeo do R2: {job['r2_key']}")
+        r2_storage.download(job["r2_key"], video_path)
     try:
         # Progresso de transcricao
         def on_progress(pct):
@@ -288,6 +303,12 @@ async def process(req: ProcessRequest, background_tasks: BackgroundTasks):
 
 def _run_processing(job_id, video_path, moments, hook, cta, caption_position, watermark, cta_video_path=None):
     job = load_job(job_id)
+
+    # Se vídeo local não existe e R2 disponível, restaura
+    if not os.path.exists(video_path) and job.get("r2_key") and r2_storage.is_available():
+        print(f"[R2] Restaurando vídeo para processamento: {job['r2_key']}")
+        r2_storage.download(job["r2_key"], video_path)
+
     clips = []
 
     for i, moment in enumerate(moments):
@@ -310,9 +331,15 @@ def _run_processing(job_id, video_path, moments, hook, cta, caption_position, wa
                 segments=job.get("segments", []),
                 cta_video_path=cta_video_path,
             )
+
+            clip_r2_key = None
+            if r2_storage.is_available():
+                clip_r2_key = r2_storage.upload(output_path, f"clips/{clip_id}.mp4")
+
             clips.append({
                 "id": clip_id,
                 "path": output_path,
+                "r2_key": clip_r2_key,
                 "start": moment["start"],
                 "end": moment["end"],
                 "score": moment.get("score", 0),
@@ -344,7 +371,12 @@ async def upload_cta_video(job_id: str, file: UploadFile = File(...)):
     with open(cta_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
+    r2_cta_key = None
+    if r2_storage.is_available():
+        r2_cta_key = r2_storage.upload(cta_path, f"uploads/{job_id}_cta{ext}")
+
     job["cta_video_path"] = cta_path
+    job["r2_cta_key"] = r2_cta_key
     save_job(job_id, job)
 
     return {"job_id": job_id, "cta_video_path": cta_path, "status": "cta_uploaded"}
@@ -365,12 +397,17 @@ def download_clip(clip_id: str):
 
     for clip in job.get("clips", []):
         if clip["id"] == clip_id and clip["status"] == "done":
-            if not os.path.exists(clip["path"]):
-                return {"error": "Arquivo do clipe não encontrado no disco"}
-            return FileResponse(
-                clip["path"],
-                media_type="video/mp4",
-                filename=f"{clip_id}.mp4"
-            )
+            # Preferir R2 (presigned URL) — não depende do filesystem efêmero do Railway
+            if clip.get("r2_key") and r2_storage.is_available():
+                url = r2_storage.presigned_url(clip["r2_key"])
+                return RedirectResponse(url)
+            # Fallback: servir do disco local
+            if os.path.exists(clip.get("path", "")):
+                return FileResponse(
+                    clip["path"],
+                    media_type="video/mp4",
+                    filename=f"{clip_id}.mp4"
+                )
+            return {"error": "Arquivo do clipe não encontrado"}
 
     return {"error": "Clipe não encontrado ou ainda processando"}
