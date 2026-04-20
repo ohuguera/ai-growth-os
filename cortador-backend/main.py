@@ -274,6 +274,16 @@ class ProcessRequest(BaseModel):
     caption_position: str = "middle"  # top | middle | bottom
     watermark: bool = True
     use_cta_video: bool = True
+    caption_style: str = "karaoke"  # karaoke | bounce | slide_up | block
+
+
+class AutoProcessRequest(BaseModel):
+    hook: str = ""
+    cta: str = ""
+    watermark: bool = True
+    caption_style: str = "bounce"  # padrão viral
+    use_cta_video: bool = True
+    max_clips: int = 20  # máximo de clipes a gerar automaticamente
 
 
 @app.post("/process")
@@ -297,14 +307,56 @@ async def process(req: ProcessRequest, background_tasks: BackgroundTasks):
         req.caption_position,
         req.watermark,
         job.get("cta_video_path") if req.use_cta_video else None,
+        req.caption_style,
     )
     return {"job_id": req.job_id, "status": "processing"}
 
 
-def _run_processing(job_id, video_path, moments, hook, cta, caption_position, watermark, cta_video_path=None):
+@app.post("/auto-process/{job_id}")
+async def auto_process(job_id: str, req: AutoProcessRequest, background_tasks: BackgroundTasks):
+    """
+    Processa AUTOMATICAMENTE todos os momentos detectados pela IA.
+    Sem necessidade de aprovação manual — gera todos os clipes em lote.
+    """
+    job = load_job(job_id)
+    if not job:
+        return {"error": "Job não encontrado"}
+
+    moments = job.get("moments", [])
+    if not moments:
+        return {"error": "Nenhum momento detectado. Execute /transcribe/{job_id} primeiro."}
+
+    # Ordena por score e pega os melhores
+    top_moments = sorted(moments, key=lambda m: m.get("score", 0), reverse=True)[:req.max_clips]
+
+    job["status"] = "processing"
+    job["clips"] = []
+    save_job(job_id, job)
+
+    background_tasks.add_task(
+        _run_processing,
+        job_id,
+        job["video_path"],
+        top_moments,
+        req.hook,
+        req.cta,
+        "middle",
+        req.watermark,
+        job.get("cta_video_path") if req.use_cta_video else None,
+        req.caption_style,
+    )
+
+    return {
+        "job_id": job_id,
+        "status": "processing",
+        "clips_queued": len(top_moments),
+        "caption_style": req.caption_style,
+    }
+
+
+def _run_processing(job_id, video_path, moments, hook, cta, caption_position, watermark, cta_video_path=None, caption_style="karaoke"):
     job = load_job(job_id)
 
-    # Se vídeo local não existe e R2 disponível, restaura
     if not os.path.exists(video_path) and job.get("r2_key") and r2_storage.is_available():
         print(f"[R2] Restaurando vídeo para processamento: {job['r2_key']}")
         r2_storage.download(job["r2_key"], video_path)
@@ -315,8 +367,13 @@ def _run_processing(job_id, video_path, moments, hook, cta, caption_position, wa
         clip_id = f"{job_id}_clip_{i + 1}"
         output_path = f"{OUTPUT_DIR}/{clip_id}.mp4"
 
-        # Usa hook natural se o usuario optou por isso
-        effective_hook = moment.get("natural_hook", "") if moment.get("use_natural_hook") else hook
+        # Hook: usa o natural_hook do agente viral se disponível, senão usa o hook global
+        effective_hook = (
+            moment.get("natural_hook", "") if moment.get("use_natural_hook")
+            else (moment.get("natural_hook") or hook)
+        )
+        # CTA: usa cta_suggestion do agente se não foi passado CTA global
+        effective_cta = cta or moment.get("cta_suggestion", "")
 
         try:
             process_clip(
@@ -325,11 +382,12 @@ def _run_processing(job_id, video_path, moments, hook, cta, caption_position, wa
                 start=moment["start"],
                 end=moment["end"],
                 hook=effective_hook,
-                cta=cta,
+                cta=effective_cta,
                 caption_position=caption_position,
                 watermark=watermark,
                 segments=job.get("segments", []),
                 cta_video_path=cta_video_path,
+                caption_style=caption_style,
             )
 
             clip_r2_key = None
@@ -343,7 +401,9 @@ def _run_processing(job_id, video_path, moments, hook, cta, caption_position, wa
                 "start": moment["start"],
                 "end": moment["end"],
                 "score": moment.get("score", 0),
-                "category": moment.get("category", "desenvolvimento"),
+                "category": moment.get("category", "geral"),
+                "caption_style": caption_style,
+                "hook_used": effective_hook,
                 "status": "done"
             })
         except Exception as e:

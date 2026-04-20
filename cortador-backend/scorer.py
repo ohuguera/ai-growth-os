@@ -1,5 +1,7 @@
 from typing import List, Dict
 import re
+import os
+import json as _json
 
 # ── Keywords iGaming PT-BR ────────────────────────────────────────────────────
 
@@ -49,116 +51,92 @@ CTA_KEYWORDS = [
     "bônus de boas-vindas", "primeiro depósito", "link na bio",
 ]
 
-TREND_KEYWORDS = [
-    "viral", "trend", "todo mundo", "tá bombando",
-    "missão", "torneio", "campeonato", "ao vivo", "live",
-    "novo", "lançamento", "exclusivo", "novo jogo",
-    "semana", "hoje", "agora", "acabou de",
-]
-
 EXCLAMATION_PATTERNS = [
-    r"[A-ZÁÉÍÓÚÃÕÇÊ]{3,}",  # uppercase iGaming shouting
-    r"!{2,}",               # multiple exclamation marks
-    r"\?!",                 # excited questions
+    r"[A-ZÁÉÍÓÚÃÕÇÊ]{3,}",
+    r"!{2,}",
+    r"\?!",
 ]
 
 
 # ── Funções de scoring individuais ────────────────────────────────────────────
 
 def score_hook(text: str, first_segment: bool = True) -> int:
-    """Hook iGaming — 0 a 35 pontos. Peso 35%."""
     text_lower = text.lower()
     score = 0
-
     for kw in HOOK_KEYWORDS:
         if kw in text_lower:
             score += 10
-
     if "?" in text:
         score += 12
-
-    # Frases curtas são melhores hooks
     word_count = len(text.split())
     if word_count <= 8:
         score += 10
     elif word_count <= 15:
         score += 5
-
-    # Bônus se é o primeiro segmento (abertura forte)
     if first_segment:
         score += 5
-
     return min(score, 35)
 
 
 def score_emotion(text: str) -> int:
-    """Emoção/reação iGaming — 0 a 30 pontos. Peso 30%."""
     text_lower = text.lower()
     score = 0
-
     for kw in EMOTIONAL_KEYWORDS:
         if kw in text_lower:
             score += 10
-
-    # Detecta excitação por uppercase e exclamações
     for pattern in EXCLAMATION_PATTERNS:
         matches = re.findall(pattern, text)
         score += len(matches) * 5
-
     return min(score, 30)
 
 
 def score_tension(text: str) -> int:
-    """Tensão / momento antes do resultado — 0 a 20 pontos. Peso 20%."""
     text_lower = text.lower()
     score = 0
-
     for kw in TENSION_KEYWORDS:
         if kw in text_lower:
             score += 8
-
     for kw in VALUE_KEYWORDS:
         if kw in text_lower:
             score += 5
-
     return min(score, 20)
 
 
 def score_trend(text: str) -> int:
-    """Trend e CTA — 0 a 15 pontos. Peso 15%."""
     text_lower = text.lower()
     score = 0
-
-    for kw in TREND_KEYWORDS:
-        if kw in text_lower:
-            score += 5
-
     for kw in CTA_KEYWORDS:
         if kw in text_lower:
             score += 4
-
     return min(score, 15)
 
 
 def score_flow(duration: float, word_count: int) -> int:
-    """Flow / ritmo — 0 a 10 pontos bônus."""
     score = 0
-
-    # Duração ideal para Reels/TikTok
     if 25 <= duration <= 55:
         score += 6
     elif 15 <= duration <= 75:
         score += 3
-
-    # Densidade de palavras (palavras/segundo)
     if duration > 0:
         wps = word_count / duration
-        if 2.0 <= wps <= 4.0:  # ritmo natural de fala
+        if 2.0 <= wps <= 4.0:
             score += 4
         elif 1.5 <= wps <= 5.0:
             score += 2
-
     return min(score, 10)
+
+
+def detect_moment_type(text: str) -> str:
+    text_lower = text.lower()
+    if any(kw in text_lower for kw in ["ganhei", "jackpot", "prêmio", "bateu", "caiu", "explodiu", "multiplicou"]):
+        return "ganho"
+    if any(kw in text_lower for kw in ["vai", "aposta", "apostei", "all in", "coração", "nervoso", "reza"]):
+        return "tensao"
+    if any(kw in text_lower for kw in ["dica", "estratégia", "como", "truque", "método", "ensino"]):
+        return "educativo"
+    if any(kw in text_lower for kw in ["olha", "olha só", "assiste", "presta atenção"]):
+        return "hook"
+    return "geral"
 
 
 def build_reason(hook: int, emotion: int, tension: int) -> str:
@@ -176,22 +154,7 @@ def build_reason(hook: int, emotion: int, tension: int) -> str:
     return " + ".join(reasons)
 
 
-def detect_moment_type(text: str) -> str:
-    """Classifica o tipo de momento para uso no frontend."""
-    text_lower = text.lower()
-
-    if any(kw in text_lower for kw in ["ganhei", "jackpot", "prêmio", "bateu", "caiu", "explodiu", "multiplicou"]):
-        return "ganho"
-    if any(kw in text_lower for kw in ["vai", "aposta", "apostei", "all in", "coração", "nervoso", "reza"]):
-        return "tensao"
-    if any(kw in text_lower for kw in ["dica", "estratégia", "como", "truque", "método", "ensino"]):
-        return "educativo"
-    if any(kw in text_lower for kw in ["olha", "olha só", "assiste", "presta atenção"]):
-        return "hook"
-    return "geral"
-
-
-# ── Candidatos de clipe ────────────────────────────────────────────────────────
+# ── Candidatos de clipe (scoring por keywords) ─────────────────────────────────
 
 def create_clip_candidates(segments: List[Dict], target_durations=[30, 45, 60]) -> List[Dict]:
     candidates = []
@@ -222,7 +185,6 @@ def create_clip_candidates(segments: List[Dict], target_durations=[30, 45, 60]) 
 
             total_score = min(h + e + t + tr + fl, 99)
 
-            # Hook natural: primeira frase do segmento se for forte
             natural_hook = None
             first_sentence = seg["text"].strip().split(".")[0]
             if len(first_sentence) > 10 and (
@@ -248,80 +210,113 @@ def create_clip_candidates(segments: List[Dict], target_durations=[30, 45, 60]) 
                 "reason": build_reason(h, e, t),
             })
 
-    # Deduplica por timestamp, mantém melhor score por janela de 15s
-    seen: dict = {}
-    for c in sorted(candidates, key=lambda x: x["score"], reverse=True):
-        bucket = int(c["start"] // 15) * 15
-        if bucket not in seen and c["score"] >= 30:
-            seen[bucket] = True
-            yield_candidate = c
-            yield_candidate["score"] = c["score"]  # já é 0-99
-
+    # Deduplica por janela de 10s — permite mais cortes em lives longas
     deduped = []
     seen_buckets: set = set()
     for c in sorted(candidates, key=lambda x: x["score"], reverse=True):
-        bucket = int(c["start"] // 15) * 15
-        if bucket not in seen_buckets and c["score"] >= 30:
+        bucket = int(c["start"] // 10) * 10
+        if bucket not in seen_buckets and c["score"] >= 25:
             seen_buckets.add(bucket)
             deduped.append(c)
 
-    return deduped[:20]
+    return deduped[:30]  # até 30 cortes por live
 
 
 def score_moments(segments: List[Dict]) -> List[Dict]:
     return create_clip_candidates(segments)
 
 
-# ── Analise com Claude AI ────────────────────────────────────────────────────
-
-import os
-import json as _json
-
+# ── Agente Viral — Analise com Claude AI ─────────────────────────────────────
 
 def analyze_with_ai(segments: list) -> list:
-    """Usa Claude API para categorizar momentos por tipo: hook/desenvolvimento/tensao/cta"""
-    import anthropic
-
+    """
+    Agente especialista em conteúdo viral de iGaming.
+    Analisa a transcrição completa da live e detecta momentos de alto potencial viral
+    em 8 categorias: grande_ganho, hook_viral, tensao_aposta, reacao_forte,
+    dica_valor, momento_engracado, controversia, cta_natural.
+    """
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        print("[AI] ANTHROPIC_API_KEY nao configurada -- pulando analise IA")
+        print("[ViralAgent] ANTHROPIC_API_KEY não configurada — pulando análise IA")
         return []
 
-    # Monta texto da transcricao com timestamps
-    transcript_text = ""
-    for seg in segments[:200]:  # limite de tokens
-        transcript_text += f"[{seg['start']:.1f}s-{seg['end']:.1f}s] {seg['text']}\n"
+    import anthropic
 
-    prompt = f"""Voce e um especialista em analise de lives de iGaming (cassino online, apostas).
-Analise a transcricao abaixo e identifique os MELHORES momentos para criar clipes virais.
+    # Monta transcrição com timestamps — envia mais contexto para análise profunda
+    transcript_lines = []
+    for seg in segments[:400]:
+        transcript_lines.append(f"[{seg['start']:.1f}s] {seg['text']}")
+    transcript_text = "\n".join(transcript_lines)
 
-Para cada momento, classifique em UMA categoria:
-- HOOK: primeiros 3-5 segundos que prendem atencao imediata (surpresa, reacao forte, ganho)
-- DESENVOLVIMENTO: conteudo de valor, estrategia, explicacao envolvente (15-60 segundos)
-- TENSAO: momento de suspense, aposta alta, espera pelo resultado
-- CTA: chamada para acao, convite para seguir, cadastro, bonus
+    # Calcula duração total para dar contexto ao agente
+    total_duration = segments[-1]["end"] if segments else 0
+    total_minutes = int(total_duration // 60)
 
-Retorne APENAS um JSON valido no formato:
+    prompt = f"""Você é o melhor especialista em criação de conteúdo viral para iGaming/cassino online do Brasil.
+Você conhece profundamente o que faz uma live de cassino explodir em visualizações no Instagram Reels e TikTok.
+
+Você está analisando uma live de {total_minutes} minutos. Sua missão: encontrar TODOS os momentos que valem virar clipe.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 AS 8 CATEGORIAS DE MOMENTOS VIRAIS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. **grande_ganho** — Ganho alto, jackpot, multiplicador absurdo, vitória inesperada
+   → Viral score: 85-99 | Duração ideal: 20-45s | Gatilho: inveja + euforia
+
+2. **hook_viral** — Frase/momento que para o scroll instantaneamente
+   → Viral score: 70-90 | Duração: 15-30s | Gatilho: curiosidade, surpresa, choque
+
+3. **tensao_aposta** — Suspense antes do resultado, aposta alta, "vai ou não vai"
+   → Viral score: 70-88 | Duração: 20-50s | Gatilho: ansiedade, expectativa
+
+4. **reacao_forte** — Grito, choque, riso, descrença — emoção 100% genuína
+   → Viral score: 75-95 | Duração: 15-35s | Gatilho: empatia, diversão
+
+5. **dica_valor** — Estratégia real, segredo de jogo, método que funciona
+   → Viral score: 65-85 | Duração: 30-60s | Gatilho: utilidade, salvar pra ver depois
+
+6. **momento_engracado** — Humor orgânico, situação cômica, piada inesperada
+   → Viral score: 65-85 | Duração: 15-40s | Gatilho: entretenimento, compartilhamento
+
+7. **controversia** — Debate, opinião forte, polêmica, "discordo total"
+   → Viral score: 70-90 | Duração: 20-50s | Gatilho: comentários, discórdia
+
+8. **cta_natural** — Chamada pra ação orgânica: cadastro, bônus, link, convite
+   → Viral score: 60-80 | Duração: 15-30s | Gatilho: conversão direta
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 REGRAS DE ANÁLISE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Retorne entre 8 e 20 momentos (quanto mais longa a live, mais momentos)
+- Duração mínima: 15s | Máxima: 60s
+- NÃO sobreponha momentos (start de um > end do anterior)
+- O hook_text vai aparecer em CIMA do vídeo nos primeiros 3s — deve ser IMPACTANTE (max 7 palavras, sem pontuação excessiva)
+- O cta_text vai no rodapé nos últimos 3s — deve ser direto e urgente (max 8 palavras)
+- viral_reason: 1 frase específica sobre POR QUE esse momento vai performar (não genérico)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📤 RETORNE APENAS JSON VÁLIDO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 {{
   "moments": [
     {{
-      "start": <float segundos>,
-      "end": <float segundos>,
-      "category": "hook|desenvolvimento|tensao|cta",
+      "start": <float>,
+      "end": <float>,
+      "category": "grande_ganho|hook_viral|tensao_aposta|reacao_forte|dica_valor|momento_engracado|controversia|cta_natural",
       "score": <int 0-99>,
-      "hook_text": "<texto sugerido para gancho -- max 8 palavras>",
-      "reason": "<motivo em 1 frase>"
+      "hook_text": "<texto impactante para overlay no topo>",
+      "cta_text": "<chamada para ação ou null>",
+      "viral_reason": "<por que vai viralizar — 1 frase específica>"
     }}
   ]
 }}
 
-Regras:
-- Retorne entre 5 e 15 momentos
-- Duracao minima: 15s, maxima: 60s
-- Prefira momentos com reacoes fortes, ganhos, ou valor informativo
-- score 90-99: viral garantido, 70-89: muito bom, 50-69: bom
-
-TRANSCRICAO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📺 TRANSCRIÇÃO DA LIVE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {transcript_text}
 """
 
@@ -329,11 +324,11 @@ TRANSCRICAO:
     try:
         message = client.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=2000,
+            max_tokens=4000,
             messages=[{"role": "user", "content": prompt}]
         )
         content = message.content[0].text.strip()
-        # Extrai JSON do response
+
         if "```json" in content:
             content = content.split("```json")[1].split("```")[0].strip()
         elif "```" in content:
@@ -341,8 +336,24 @@ TRANSCRICAO:
 
         data = _json.loads(content)
         moments = data.get("moments", [])
-        print(f"[AI] {len(moments)} momentos detectados pela IA")
-        return moments
+
+        # Normaliza campos para garantir compatibilidade com o pipeline
+        normalized = []
+        for m in moments:
+            normalized.append({
+                "start": float(m.get("start", 0)),
+                "end": float(m.get("end", 0)),
+                "score": int(m.get("score", 50)),
+                "text": "",  # será preenchido pelo pipeline
+                "natural_hook": m.get("hook_text", ""),
+                "cta_suggestion": m.get("cta_text") or "",
+                "category": m.get("category", "geral"),
+                "reason": m.get("viral_reason", "Momento viral"),
+            })
+
+        print(f"[ViralAgent] {len(normalized)} momentos detectados pela IA")
+        return normalized
+
     except Exception as e:
-        print(f"[AI] Erro na analise: {e}")
+        print(f"[ViralAgent] Erro na análise: {e}")
         return []
