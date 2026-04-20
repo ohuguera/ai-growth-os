@@ -140,7 +140,10 @@ def upload_finalize(body: dict):
 
     r2_key = None
     if r2_storage.is_available():
-        r2_key = r2_storage.upload(video_path, f"uploads/{job_id}{ext}")
+        try:
+            r2_key = r2_storage.upload(video_path, f"uploads/{job_id}{ext}")
+        except Exception as e:
+            print(f"[R2] Upload falhou (não-fatal): {e}")
 
     job["status"] = "uploaded"
     job["video_path"] = video_path
@@ -166,7 +169,10 @@ async def upload_video(file: UploadFile = File(...)):
 
     r2_key = None
     if r2_storage.is_available():
-        r2_key = r2_storage.upload(video_path, f"uploads/{job_id}{ext}")
+        try:
+            r2_key = r2_storage.upload(video_path, f"uploads/{job_id}{ext}")
+        except Exception as e:
+            print(f"[R2] Upload falhou (não-fatal): {e}")
 
     save_job(job_id, {
         "id": job_id,
@@ -392,7 +398,10 @@ def _run_processing(job_id, video_path, moments, hook, cta, caption_position, wa
 
             clip_r2_key = None
             if r2_storage.is_available():
-                clip_r2_key = r2_storage.upload(output_path, f"clips/{clip_id}.mp4")
+                try:
+                    clip_r2_key = r2_storage.upload(output_path, f"clips/{clip_id}.mp4")
+                except Exception as e:
+                    print(f"[R2] Upload clip falhou (não-fatal): {e}")
 
             clips.append({
                 "id": clip_id,
@@ -433,7 +442,10 @@ async def upload_cta_video(job_id: str, file: UploadFile = File(...)):
 
     r2_cta_key = None
     if r2_storage.is_available():
-        r2_cta_key = r2_storage.upload(cta_path, f"uploads/{job_id}_cta{ext}")
+        try:
+            r2_cta_key = r2_storage.upload(cta_path, f"uploads/{job_id}_cta{ext}")
+        except Exception as e:
+            print(f"[R2] Upload CTA falhou (não-fatal): {e}")
 
     job["cta_video_path"] = cta_path
     job["r2_cta_key"] = r2_cta_key
