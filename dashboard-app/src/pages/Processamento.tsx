@@ -52,6 +52,12 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, na
       try {
         const job = await getJob(jobId)
 
+        // Job sumiu do servidor (deploy reiniciou o container)
+        if ('error' in job && job.error === 'Job não encontrado') {
+          setError('job_not_found')
+          return
+        }
+
         if (job.status === 'transcribing') {
           setPhase('transcribe')
           // Mostrar progresso se disponivel
@@ -247,37 +253,58 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, na
             background: '#EF444415', border: '1px solid #EF444430',
             color: '#EF4444', fontSize: 13,
           }}>
-            <strong>
-              {error === 'server_restart'
-                ? 'O servidor reiniciou durante a transcrição.'
-                : `Erro: ${error}`}
-            </strong>
-            <br />
-            <button
-              disabled={retrying}
-              onClick={async () => {
-                setRetrying(true)
-                setError(null)
-                processed.current = false
-                try {
-                  await fetch(`${BASE}/retry/${jobId}`, { method: 'POST' })
-                  setPhase('transcribe')
-                  setTranscriptionProgress(0)
-                } catch {
-                  setError('Falha ao reconectar. Tente recarregar a página.')
-                } finally {
-                  setRetrying(false)
-                }
-              }}
-              style={{
-                marginTop: 10, padding: '8px 16px', borderRadius: 6,
-                background: '#EF444425', border: '1px solid #EF444450',
-                color: '#EF4444', fontWeight: 600, fontSize: 12,
-                cursor: retrying ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {retrying ? 'Reconectando...' : '↺ Retranscrever agora'}
-            </button>
+            {error === 'job_not_found' ? (
+              <>
+                <strong>O servidor reiniciou e o job expirou.</strong>
+                <br />
+                <span style={{ fontSize: 12, opacity: 0.8 }}>Faça o upload do vídeo novamente.</span>
+                <br />
+                <button
+                  onClick={() => navigate({ name: 'inbox' })}
+                  style={{
+                    marginTop: 10, padding: '8px 16px', borderRadius: 6,
+                    background: '#EF444425', border: '1px solid #EF444450',
+                    color: '#EF4444', fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                  }}
+                >
+                  ← Voltar e reenviar
+                </button>
+              </>
+            ) : (
+              <>
+                <strong>
+                  {error === 'server_restart'
+                    ? 'O servidor reiniciou durante a transcrição.'
+                    : `Erro: ${error}`}
+                </strong>
+                <br />
+                <button
+                  disabled={retrying}
+                  onClick={async () => {
+                    setRetrying(true)
+                    setError(null)
+                    processed.current = false
+                    try {
+                      await fetch(`${BASE}/retry/${jobId}`, { method: 'POST' })
+                      setPhase('transcribe')
+                      setTranscriptionProgress(0)
+                    } catch {
+                      setError('Falha ao reconectar. Tente recarregar a página.')
+                    } finally {
+                      setRetrying(false)
+                    }
+                  }}
+                  style={{
+                    marginTop: 10, padding: '8px 16px', borderRadius: 6,
+                    background: '#EF444425', border: '1px solid #EF444450',
+                    color: '#EF4444', fontWeight: 600, fontSize: 12,
+                    cursor: retrying ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {retrying ? 'Reconectando...' : '↺ Retranscrever agora'}
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

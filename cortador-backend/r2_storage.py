@@ -1,4 +1,5 @@
 import boto3
+from boto3.s3.transfer import TransferConfig
 import os
 
 _client = None
@@ -17,10 +18,17 @@ def get_client():
 
 BUCKET = os.environ.get('R2_BUCKET', 'hfive-videos')
 
+# Desativa multipart — R2 token não tem CreateMultipartUpload
+# Usa put_object direto (streaming por chunks de 100MB sem multipart S3)
+_TRANSFER_CFG = TransferConfig(
+    multipart_threshold=10 * 1024 ** 3,  # 10GB — nunca ativa multipart
+    use_threads=False,
+)
+
 def upload(local_path: str, key: str) -> str:
-    """Faz upload de arquivo local para R2. Retorna o key."""
+    """Faz upload de arquivo local para R2 sem multipart. Retorna o key."""
     print(f"[R2] Upload: {local_path} -> {key}")
-    get_client().upload_file(local_path, BUCKET, key)
+    get_client().upload_file(local_path, BUCKET, key, Config=_TRANSFER_CFG)
     print(f"[R2] Upload concluido: {key}")
     return key
 
