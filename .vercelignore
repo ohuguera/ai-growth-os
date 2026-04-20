@@ -1,0 +1,9 @@
+cortador-backend/
+humanizer/
+squads/
+tests/
+docs/
+packages/
+.aiox-core/
+bin/
+agents/
