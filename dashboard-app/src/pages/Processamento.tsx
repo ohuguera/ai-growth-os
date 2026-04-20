@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { getJob, processClips } from '../services/api'
+const BASE = (import.meta as { env: Record<string, string> }).env.VITE_CORTADOR_API_URL || 'https://ai-growth-os-production-bf81.up.railway.app'
 import { EXPERTS, PRESETS } from '../data/experts'
 import type { ExpertId, PresetId, Page, Moment } from '../types'
 
@@ -13,7 +14,7 @@ interface Step {
 
 const STEPS: Step[] = [
   { phase: 'upload',     label: 'Upload concluído',              detail: 'Vídeo recebido pelo servidor' },
-  { phase: 'transcribe', label: 'Transcrevendo com IA',          detail: 'Whisper large-v3 analisando o áudio...' },
+  { phase: 'transcribe', label: 'Transcrevendo com IA',          detail: 'Whisper medium analisando o áudio...' },
   { phase: 'ai',         label: 'Analisando com IA',             detail: 'Claude detectando hooks, desenvolvimento e CTAs...' },
   { phase: 'moments',    label: 'Detectando melhores momentos',  detail: 'Identificando picos de engajamento...' },
   { phase: 'process',    label: 'Gerando cortes',                detail: 'FFmpeg aplicando identidade e legendas...' },
@@ -39,6 +40,7 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, na
   const [error, setError] = useState<string | null>(null)
   const [momentCount, setMomentCount] = useState<number | null>(null)
   const [transcriptionProgress, setTranscriptionProgress] = useState(0)
+  const [retrying, setRetrying] = useState(false)
   const processed = useRef(false)
 
   useEffect(() => {
@@ -245,9 +247,37 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, na
             background: '#EF444415', border: '1px solid #EF444430',
             color: '#EF4444', fontSize: 13,
           }}>
-            <strong>Erro:</strong> {error}
+            <strong>
+              {error === 'server_restart'
+                ? 'O servidor reiniciou durante a transcrição.'
+                : `Erro: ${error}`}
+            </strong>
             <br />
-            <span style={{ fontSize: 12, opacity: 0.8 }}>Verifique se o servidor está online em localhost:8000</span>
+            <button
+              disabled={retrying}
+              onClick={async () => {
+                setRetrying(true)
+                setError(null)
+                processed.current = false
+                try {
+                  await fetch(`${BASE}/retry/${jobId}`, { method: 'POST' })
+                  setPhase('transcribe')
+                  setTranscriptionProgress(0)
+                } catch {
+                  setError('Falha ao reconectar. Tente recarregar a página.')
+                } finally {
+                  setRetrying(false)
+                }
+              }}
+              style={{
+                marginTop: 10, padding: '8px 16px', borderRadius: 6,
+                background: '#EF444425', border: '1px solid #EF444450',
+                color: '#EF4444', fontWeight: 600, fontSize: 12,
+                cursor: retrying ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {retrying ? 'Reconectando...' : '↺ Retranscrever agora'}
+            </button>
           </div>
         )}
       </div>

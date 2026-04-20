@@ -14,12 +14,14 @@ IGAMING_PROMPT = (
 def get_model():
     global _model, _model_name
     if _model is None:
-        for model_name in ["large-v3", "medium", "base"]:
+        # medium: 769MB RAM, ~4x mais rápido que large-v3, ótima precisão PT-BR
+        # large-v3 precisa ~3GB RAM — estoura OOM em Railway
+        for model_name in ["medium", "base"]:
             try:
                 print(f"[Whisper] Carregando modelo {model_name}...")
                 _model = WhisperModel(model_name, device="cpu", compute_type="int8")
                 _model_name = model_name
-                print(f"[Whisper] Modelo {model_name} carregado.")
+                print(f"[Whisper] Modelo {model_name} carregado com sucesso.")
                 break
             except Exception as e:
                 print(f"[Whisper] Falha {model_name}: {e}")

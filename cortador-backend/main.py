@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
+from contextlib import asynccontextmanager
 from pydantic import BaseModel
 import uuid, os, json, shutil
 from transcriber import transcribe_video
@@ -11,7 +12,42 @@ import r2_storage
 CHUNK_DIR = "chunks"
 os.makedirs(CHUNK_DIR, exist_ok=True)
 
-app = FastAPI(title="Cortador de Lives — BINGOBET")
+UPLOAD_DIR = "uploads"
+OUTPUT_DIR = "outputs"
+JOBS_DIR = "jobs"
+
+for d in [UPLOAD_DIR, OUTPUT_DIR, JOBS_DIR]:
+    os.makedirs(d, exist_ok=True)
+
+
+def _reset_stuck_jobs():
+    """No startup: jobs presos em 'transcribing' ou 'processing' viram 'error' com mensagem de retry."""
+    if not os.path.exists(JOBS_DIR):
+        return
+    for fname in os.listdir(JOBS_DIR):
+        if not fname.endswith(".json"):
+            continue
+        try:
+            path = f"{JOBS_DIR}/{fname}"
+            with open(path, encoding="utf-8") as f:
+                job = json.load(f)
+            if job.get("status") in ("transcribing", "processing"):
+                print(f"[Startup] Job {job.get('id')} preso em '{job['status']}' → resetado para 'error'")
+                job["status"] = "error"
+                job["error"] = "server_restart"
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(job, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"[Startup] Erro ao checar job {fname}: {e}")
+
+
+@asynccontextmanager
+async def lifespan(app):
+    _reset_stuck_jobs()
+    yield
+
+
+app = FastAPI(title="Cortador de Lives — BINGOBET", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,13 +55,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-UPLOAD_DIR = "uploads"
-OUTPUT_DIR = "outputs"
-JOBS_DIR = "jobs"
-
-for d in [UPLOAD_DIR, OUTPUT_DIR, JOBS_DIR]:
-    os.makedirs(d, exist_ok=True)
 
 
 # ──────────────────────────────────────────
@@ -196,10 +225,42 @@ async def transcribe(job_id: str, background_tasks: BackgroundTasks):
         return {"error": "Job não encontrado"}
 
     job["status"] = "transcribing"
+    job.pop("error", None)
+    job["transcription_progress"] = 0
     save_job(job_id, job)
 
     background_tasks.add_task(_run_transcription, job_id, job["video_path"])
     return {"job_id": job_id, "status": "transcribing"}
+
+
+@app.post("/retry/{job_id}")
+async def retry_transcription(job_id: str, background_tasks: BackgroundTasks):
+    """Retranscreve um job que falhou ou ficou preso — sem precisar reuplodar."""
+    job = load_job(job_id)
+    if not job:
+        return {"error": "Job não encontrado"}
+
+    video_path = job.get("video_path", "")
+    # Se o arquivo sumiu do disco, tenta restaurar do R2
+    if not os.path.exists(video_path) and job.get("r2_key") and r2_storage.is_available():
+        try:
+            r2_storage.download(job["r2_key"], video_path)
+            print(f"[Retry] Arquivo restaurado do R2: {video_path}")
+        except Exception as e:
+            return {"error": f"Arquivo não encontrado localmente nem no R2: {e}"}
+
+    if not os.path.exists(video_path):
+        return {"error": "Arquivo de vídeo não encontrado. Faça o upload novamente."}
+
+    job["status"] = "transcribing"
+    job.pop("error", None)
+    job["transcription_progress"] = 0
+    job["segments"] = []
+    job["moments"] = []
+    save_job(job_id, job)
+
+    background_tasks.add_task(_run_transcription, job_id, video_path)
+    return {"job_id": job_id, "status": "transcribing", "message": "Retranscrição iniciada"}
 
 
 def _run_transcription(job_id: str, video_path: str):
