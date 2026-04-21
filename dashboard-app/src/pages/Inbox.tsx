@@ -68,12 +68,13 @@ interface Props {
 }
 
 export default function Inbox({ navigate }: Props) {
-  const [lives] = useState<Live[]>(loadLives)
+  const [lives, setLives] = useState<Live[]>(loadLives)
   const [activeNav, setActiveNav] = useState<NavSection>('home')
   const [url, setUrl] = useState('')
   const [tabProj, setTabProj] = useState<'todos' | 'salvos' | 'favoritos'>('todos')
   const [file, setFile] = useState<File | null>(null)
   const [preset, setPreset] = useState<PresetId>('viral')
+  const [captionStyle, setCaptionStyle] = useState<string>('bounce')
   const [uploading, setUploading] = useState(false)
   const [uploadPct, setUploadPct] = useState(0)
   const [error, setError] = useState<string | null>(null)
@@ -100,11 +101,28 @@ export default function Inbox({ navigate }: Props) {
       const { job_id } = await uploadVideoChunked(file, p => setUploadPct(p))
       await startTranscription(job_id)
       setUploadPct(100)
+
+      // Persiste job real no localStorage para aparecer na lista
+      const newLive: Live = {
+        id: job_id,
+        expertId: 'lucas_striz',
+        title: liveTitle,
+        date: new Date().toISOString().split('T')[0],
+        durationSec: 0,
+        status: 'processing',
+        jobId: job_id,
+      }
+      const current = loadLives()
+      const updated = [newLive, ...current.filter(l => l.id !== job_id)]
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      setLives(updated)
+
       setTimeout(() => navigate({
         name: 'processando',
         jobId: job_id,
         liveTitle,
         presetId: preset,
+        captionStyle,
       }), 300)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro no upload')
@@ -285,24 +303,50 @@ export default function Inbox({ navigate }: Props) {
 
             {/* Preset pills — aparecem após selecionar arquivo */}
             {file && !uploading && (
-              <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-                {PRESETS.map(p => (
-                  <button
-                    key={p.id}
-                    onClick={() => setPreset(p.id as PresetId)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 5,
-                      padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500,
-                      background: preset === p.id ? '#ffffff15' : 'transparent',
-                      border: preset === p.id ? '1px solid #ffffff30' : '1px solid #2a2a2a',
-                      color: preset === p.id ? '#fff' : '#555', cursor: 'pointer', transition: 'all 0.12s',
-                    }}
-                  >
-                    {preset === p.id && <Check size={10} />}
-                    {p.icon} {p.name}
-                  </button>
-                ))}
-              </div>
+              <>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+                  {PRESETS.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => setPreset(p.id as PresetId)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                        background: preset === p.id ? '#ffffff15' : 'transparent',
+                        border: preset === p.id ? '1px solid #ffffff30' : '1px solid #2a2a2a',
+                        color: preset === p.id ? '#fff' : '#555', cursor: 'pointer', transition: 'all 0.12s',
+                      }}
+                    >
+                      {preset === p.id && <Check size={10} />}
+                      {p.icon} {p.name}
+                    </button>
+                  ))}
+                </div>
+                {/* Caption style picker */}
+                <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+                  {[
+                    { id: 'bounce', label: '⚡ Bounce', desc: 'Palavra a palavra' },
+                    { id: 'karaoke', label: '🎤 Karaoke', desc: 'Destaque contínuo' },
+                    { id: 'slide_up', label: '⬆ Slide', desc: 'Aparece de baixo' },
+                    { id: 'block', label: '▪ Block', desc: 'Bloco limpo' },
+                  ].map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => setCaptionStyle(s.id)}
+                      title={s.desc}
+                      style={{
+                        flex: 1, padding: '5px 4px', borderRadius: 8, fontSize: 10, fontWeight: 600,
+                        background: captionStyle === s.id ? '#38BDF820' : 'transparent',
+                        border: captionStyle === s.id ? '1px solid #38BDF850' : '1px solid #2a2a2a',
+                        color: captionStyle === s.id ? '#38BDF8' : '#444',
+                        cursor: 'pointer', transition: 'all 0.12s',
+                      }}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
 
             {/* Progress bar durante upload */}

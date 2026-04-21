@@ -12,6 +12,7 @@ interface Props {
 }
 
 type CaptionPos = 'top' | 'middle' | 'bottom'
+type CaptionStyle = 'bounce' | 'karaoke' | 'slide_up' | 'block'
 
 export default function AjusteRapido({ jobId, clipId, expertId, navigate }: Props) {
   const expert = expertId ? EXPERTS[expertId] : { color: '#6366F1', colorMuted: '#6366F115', initials: 'IA', name: 'ClipAnything', watermarkText: '+18', style: 'IA', id: 'generic' }
@@ -26,6 +27,7 @@ export default function AjusteRapido({ jobId, clipId, expertId, navigate }: Prop
   const [hook, setHook] = useState('')
   const [cta, setCta] = useState('Segue o perfil!')
   const [captionPos, setCaptionPos] = useState<CaptionPos>('middle')
+  const [captionStyle, setCaptionStyle] = useState<CaptionStyle>('bounce')
   const [watermark, setWatermark] = useState(true)
   const [trimStart, setTrimStart] = useState(0)
   const [trimEnd, setTrimEnd] = useState(0)
@@ -70,6 +72,7 @@ export default function AjusteRapido({ jobId, clipId, expertId, navigate }: Prop
         cta,
         caption_position: captionPos,
         watermark,
+        caption_style: captionStyle,
       })
       // poll until done
       let tries = 0
@@ -150,17 +153,31 @@ export default function AjusteRapido({ jobId, clipId, expertId, navigate }: Prop
               Preview
             </div>
 
-            {/* Video mock */}
+            {/* Video player real */}
             <div style={{
-              aspectRatio: '9/16', maxHeight: 360, background: `linear-gradient(180deg, ${expert.color}20, ${expert.color}08)`,
+              aspectRatio: '9/16', maxHeight: 360,
               border: `1px solid ${expert.color}20`, borderRadius: 12,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              position: 'relative', overflow: 'hidden',
+              position: 'relative', overflow: 'hidden', background: '#000',
             }}>
-              <div style={{ fontSize: 36, marginBottom: 8 }}>🎬</div>
-              <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                {fmtTime(trimStart)} → {fmtTime(trimEnd)}
-              </div>
+              {clip ? (
+                <video
+                  src={downloadUrl(clip.id)}
+                  controls
+                  playsInline
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div style={{
+                  width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  background: `linear-gradient(180deg, ${expert.color}20, ${expert.color}08)`,
+                }}>
+                  <div style={{ fontSize: 36, marginBottom: 8 }}>🎬</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                    {fmtTime(trimStart)} → {fmtTime(trimEnd)}
+                  </div>
+                </div>
+              )}
 
               {/* Hook overlay preview */}
               {hook && (
@@ -168,22 +185,11 @@ export default function AjusteRapido({ jobId, clipId, expertId, navigate }: Prop
                   position: 'absolute', top: 24, left: 12, right: 12,
                   background: 'rgba(0,0,0,0.7)', borderRadius: 6, padding: '6px 10px',
                   fontSize: 11, fontWeight: 600, textAlign: 'center', color: '#FFE500',
+                  pointerEvents: 'none',
                 }}>
                   {hook}
                 </div>
               )}
-
-              {/* Caption preview */}
-              <div style={{
-                position: 'absolute',
-                top: captionPos === 'top' ? 60 : captionPos === 'middle' ? '45%' : undefined,
-                bottom: captionPos === 'bottom' ? 60 : undefined,
-                left: 12, right: 12,
-                background: 'rgba(0,0,0,0.5)', borderRadius: 4, padding: '4px 8px',
-                fontSize: 11, textAlign: 'center',
-              }}>
-                Legenda aqui...
-              </div>
 
               {/* CTA overlay preview */}
               {cta && (
@@ -191,6 +197,7 @@ export default function AjusteRapido({ jobId, clipId, expertId, navigate }: Prop
                   position: 'absolute', bottom: 24, left: 12, right: 12,
                   background: 'rgba(0,0,0,0.7)', borderRadius: 6, padding: '6px 10px',
                   fontSize: 11, fontWeight: 600, textAlign: 'center', color: '#FFE500',
+                  pointerEvents: 'none',
                 }}>
                   {cta}
                 </div>
@@ -201,6 +208,7 @@ export default function AjusteRapido({ jobId, clipId, expertId, navigate }: Prop
                 <div style={{
                   position: 'absolute', top: 8, right: 10,
                   fontSize: 9, color: 'rgba(255,255,255,0.6)',
+                  pointerEvents: 'none',
                 }}>
                   {expert.watermarkText}
                 </div>
@@ -281,9 +289,38 @@ export default function AjusteRapido({ jobId, clipId, expertId, navigate }: Prop
                       background: captionPos === pos ? expert.colorMuted : 'var(--bg-surface)',
                       border: captionPos === pos ? `1px solid ${expert.color}40` : '1px solid var(--border)',
                       color: captionPos === pos ? expert.color : 'var(--text-secondary)',
+                      cursor: 'pointer',
                     }}
                   >
                     {pos === 'top' ? 'Topo' : pos === 'middle' ? 'Centro' : 'Baixo'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Caption style */}
+            <div style={controlCard}>
+              <label style={labelStyle}>Estilo da Legenda</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {([
+                  { id: 'bounce', label: '⚡ Bounce', desc: 'Palavra a palavra' },
+                  { id: 'karaoke', label: '🎤 Karaoke', desc: 'Destaque contínuo' },
+                  { id: 'slide_up', label: '⬆ Slide Up', desc: 'Aparece de baixo' },
+                  { id: 'block', label: '▪ Block', desc: 'Bloco limpo' },
+                ] as { id: CaptionStyle; label: string; desc: string }[]).map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => setCaptionStyle(s.id)}
+                    title={s.desc}
+                    style={{
+                      padding: '7px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                      background: captionStyle === s.id ? expert.colorMuted : 'var(--bg-surface)',
+                      border: captionStyle === s.id ? `1px solid ${expert.color}40` : '1px solid var(--border)',
+                      color: captionStyle === s.id ? expert.color : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {s.label}
                   </button>
                 ))}
               </div>

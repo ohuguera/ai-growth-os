@@ -127,6 +127,6 @@ export type EditorPage =
 export type Page =
   | { name: 'inbox' }
   | { name: 'novo'; liveId?: string }
-  | { name: 'processando'; jobId: string; expertId?: ExpertId; liveTitle: string; presetId: PresetId }
+  | { name: 'processando'; jobId: string; expertId?: ExpertId; liveTitle: string; presetId: PresetId; hook?: string; cta?: string; captionStyle?: string }
   | { name: 'resultados'; jobId: string; expertId?: ExpertId; liveTitle: string }
   | { name: 'ajuste'; jobId: string; clipId: string; expertId?: ExpertId }

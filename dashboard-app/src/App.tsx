@@ -162,7 +162,7 @@ export default function App() {
           {page.name === 'inbox' && <Inbox navigate={setPage} />}
           {page.name === 'novo' && <NovoCortee navigate={setPage} />}
           {page.name === 'processando' && (
-            <Processamento jobId={page.jobId} expertId={page.expertId} liveTitle={page.liveTitle} presetId={page.presetId} navigate={setPage} />
+            <Processamento jobId={page.jobId} expertId={page.expertId} liveTitle={page.liveTitle} presetId={page.presetId} hook={page.hook} cta={page.cta} captionStyle={page.captionStyle} navigate={setPage} />
           )}
           {page.name === 'resultados' && (
             <Resultados jobId={page.jobId} expertId={page.expertId} liveTitle={page.liveTitle} navigate={setPage} />

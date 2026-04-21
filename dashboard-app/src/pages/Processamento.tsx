@@ -30,10 +30,13 @@ interface Props {
   expertId?: ExpertId
   liveTitle: string
   presetId: PresetId
+  hook?: string
+  cta?: string
+  captionStyle?: string
   navigate: (p: Page) => void
 }
 
-export default function Processamento({ jobId, expertId, liveTitle, presetId, navigate }: Props) {
+export default function Processamento({ jobId, expertId, liveTitle, presetId, hook, cta, captionStyle, navigate }: Props) {
   const expert = expertId ? EXPERTS[expertId] : { color: '#6366F1', colorMuted: '#6366F115', initials: 'IA', name: 'ClipAnything', watermarkText: '+18', style: 'IA', id: 'generic' }
   const preset = PRESETS.find(p => p.id === presetId)!
   const [phase, setPhase] = useState<Phase>('upload')
@@ -110,10 +113,11 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, na
                   use_natural_hook: !!m.natural_hook,
                   natural_hook: m.natural_hook || '',
                 })),
-            hook: '',
-            cta: 'Segue o perfil!',
+            hook: hook || '',
+            cta: cta || 'Segue o perfil!',
             caption_position: 'middle',
             watermark: true,
+            caption_style: captionStyle || 'bounce',
           })
 
           timer = setTimeout(poll, 2000)
@@ -123,6 +127,21 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, na
           setPhase('process')
         } else if (job.status === 'done') {
           setPhase('done')
+          // Atualiza job no localStorage como done com contagem de clipes
+          try {
+            const STORAGE_KEY = 'hfive_lives'
+            const raw = localStorage.getItem(STORAGE_KEY)
+            if (raw) {
+              const lives = JSON.parse(raw)
+              const idx = lives.findIndex((l: { id: string; jobId?: string }) => l.id === jobId || l.jobId === jobId)
+              if (idx !== -1) {
+                lives[idx].status = 'done'
+                lives[idx].clipCount = (job.clips || []).filter((c: { status: string }) => c.status === 'done').length
+                lives[idx].jobId = jobId
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(lives))
+              }
+            }
+          } catch { /* ignore */ }
           await new Promise(r => setTimeout(r, 1000))
           if (alive) navigate({ name: 'resultados', jobId, expertId, liveTitle })
           return
@@ -145,7 +164,7 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, na
       alive = false
       clearTimeout(timer)
     }
-  }, [jobId, presetId, expertId, liveTitle, navigate, preset.durationRange])
+  }, [jobId, presetId, expertId, liveTitle, navigate, preset.durationRange, hook, cta, captionStyle])
 
   const currentIdx = phaseIndex(phase)
 

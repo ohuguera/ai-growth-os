@@ -497,6 +497,63 @@ export default function Resultados({ jobId, expertId, liveTitle, navigate }: Pro
         </div>
       </div>
 
+      {/* ── BULK ACTION BAR ── */}
+      {selecting && selected.size > 0 && (
+        <div style={{
+          height: 44, flexShrink: 0, background: '#0d0d2e',
+          borderBottom: '1px solid #6366F130',
+          display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px',
+        }}>
+          <span style={{ fontSize: 12, color: '#818CF8', fontWeight: 600 }}>
+            {selected.size} clipe{selected.size > 1 ? 's' : ''} selecionado{selected.size > 1 ? 's' : ''}
+          </span>
+          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+            {Array.from(selected).map((id, idx) => {
+              const clip = doneClips.find(c => c.id === id)
+              if (!clip) return null
+              return (
+                <a
+                  key={id}
+                  href={downloadUrl(id)}
+                  download={`clip_${idx + 1}.mp4`}
+                  style={{ display: 'none' }}
+                  ref={el => { if (el && (el as HTMLAnchorElement).dataset.auto === '1') (el as HTMLAnchorElement).click() }}
+                />
+              )
+            })}
+            <button
+              onClick={() => {
+                Array.from(selected).forEach((id, idx) => {
+                  const a = document.createElement('a')
+                  a.href = downloadUrl(id)
+                  a.download = `clip_${idx + 1}.mp4`
+                  document.body.appendChild(a)
+                  setTimeout(() => { a.click(); document.body.removeChild(a) }, idx * 500)
+                })
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                background: '#6366F120', border: '1px solid #6366F140',
+                color: '#818CF8', cursor: 'pointer',
+              }}
+            >
+              <Download size={13} /> Baixar {selected.size} clipes
+            </button>
+            <button
+              onClick={() => { setSelected(new Set()); setSelecting(false) }}
+              style={{
+                padding: '6px 10px', borderRadius: 6, fontSize: 12,
+                background: 'transparent', border: '1px solid #333',
+                color: '#666', cursor: 'pointer',
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── BODY ── */}
       <div style={{ flex: 1, overflow: 'auto', padding: '0 20px' }}>
 

@@ -74,6 +74,7 @@ export interface ProcessParams {
   caption_position: 'top' | 'middle' | 'bottom'
   watermark: boolean
   use_cta_video?: boolean
+  caption_style?: string
 }
 
 export async function processClips(params: ProcessParams): Promise<void> {
