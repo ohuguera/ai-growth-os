@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import {
   LayoutGrid, List, Search, CheckSquare, Filter,
   ArrowUpDown, Download, X, Sliders, Calendar, Zap, Sparkles, Loader2,
-  PlayCircle, Volume2, VolumeX, Maximize2,
+  PlayCircle, Volume2, VolumeX, Maximize2, FileVideo,
 } from 'lucide-react'
-import { getJob, downloadUrl } from '../services/api'
+import { getJob, downloadUrl, premiereXmlUrl } from '../services/api'
 import { EXPERTS } from '../data/experts'
 import { gerarHook, gerarLegenda, gerarTituloViral } from '../services/skillsService'
 import type { ExpertId, Clip, Moment, Page } from '../types'
@@ -479,12 +479,20 @@ export default function Resultados({ jobId, expertId, liveTitle, navigate }: Pro
           }}>
             <ArrowUpDown size={13} />
           </button>
-          <button style={{
-            width: 30, height: 30, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#666', cursor: 'pointer',
-          }}>
-            <Download size={13} />
-          </button>
+          <a
+            href={premiereXmlUrl(jobId)}
+            download
+            title="Exportar XML para Adobe Premiere Pro"
+            style={{
+              height: 30, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: 5, padding: '0 10px',
+              background: '#1a1a2e', border: '1px solid #6366F140',
+              color: '#818CF8', cursor: 'pointer', fontSize: 11, fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            <FileVideo size={12} /> Premiere XML
+          </a>
           <div style={{ fontSize: 16, color: '#333', cursor: 'pointer' }}>···</div>
         </div>
       </div>

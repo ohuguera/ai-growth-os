@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 import uuid, os, json, shutil
@@ -513,6 +513,102 @@ async def upload_cta_video(job_id: str, file: UploadFile = File(...)):
     save_job(job_id, job)
 
     return {"job_id": job_id, "cta_video_path": cta_path, "status": "cta_uploaded"}
+
+
+@app.get("/export/premiere/{job_id}")
+def export_premiere_xml(job_id: str):
+    """
+    Exporta todos os clipes do job como XML compatível com Adobe Premiere Pro (FCP XML).
+    Permite importar diretamente no Premiere como uma sequência com todos os cortes.
+    """
+    job = load_job(job_id)
+    if not job:
+        return {"error": "Job não encontrado"}
+
+    clips = [c for c in job.get("clips", []) if c.get("status") == "done"]
+    if not clips:
+        return {"error": "Nenhum clipe processado encontrado"}
+
+    filename_safe = (job.get("filename", "live") or "live").replace(" ", "_").replace(".mp4", "").replace(".mov", "")[:40]
+
+    # FCP XML compatible com Premiere Pro (Final Cut Pro XML v1)
+    xml_lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<!DOCTYPE xmeml>',
+        '<xmeml version="4">',
+        f'  <sequence id="seq1">',
+        f'    <name>{filename_safe} — HFIVE CORTES</name>',
+        f'    <duration>{sum(int((c["end"] - c["start"]) * 30) for c in clips)}</duration>',
+        '    <rate><timebase>30</timebase><ntsc>FALSE</ntsc></rate>',
+        '    <media>',
+        '      <video>',
+        '        <format>',
+        '          <samplecharacteristics>',
+        '            <width>1080</width>',
+        '            <height>1920</height>',
+        '            <pixelaspectratio>square</pixelaspectratio>',
+        '            <rate><timebase>30</timebase><ntsc>FALSE</ntsc></rate>',
+        '          </samplecharacteristics>',
+        '        </format>',
+        '        <track>',
+    ]
+
+    timeline_frame = 0
+    for i, clip in enumerate(clips):
+        clip_duration_s = clip["end"] - clip["start"]
+        clip_duration_frames = int(clip_duration_s * 30)
+        score = clip.get("score", 0)
+        category = clip.get("category", "geral")
+        clip_name = f"Corte {i+1} — score {score} — {category}"
+
+        xml_lines += [
+            f'          <clipitem id="clip{i+1}">',
+            f'            <name>{clip_name}</name>',
+            f'            <start>{timeline_frame}</start>',
+            f'            <end>{timeline_frame + clip_duration_frames}</end>',
+            f'            <in>0</in>',
+            f'            <out>{clip_duration_frames}</out>',
+            f'            <file id="file{i+1}">',
+            f'              <name>{clip["id"]}.mp4</name>',
+            f'              <pathurl>{clip["id"]}.mp4</pathurl>',
+            f'              <rate><timebase>30</timebase><ntsc>FALSE</ntsc></rate>',
+            f'              <duration>{clip_duration_frames}</duration>',
+            '              <media>',
+            '                <video>',
+            '                  <samplecharacteristics>',
+            '                    <width>1080</width>',
+            '                    <height>1920</height>',
+            '                    <rate><timebase>30</timebase><ntsc>FALSE</ntsc></rate>',
+            '                  </samplecharacteristics>',
+            '                </video>',
+            '                <audio>',
+            '                  <samplecharacteristics>',
+            '                    <depth>16</depth>',
+            '                    <samplerate>44100</samplerate>',
+            '                  </samplecharacteristics>',
+            '                </audio>',
+            '              </media>',
+            '            </file>',
+            f'          </clipitem>',
+        ]
+        timeline_frame += clip_duration_frames
+
+    xml_lines += [
+        '        </track>',
+        '      </video>',
+        '    </media>',
+        '  </sequence>',
+        '</xmeml>',
+    ]
+
+    xml_content = "\n".join(xml_lines)
+    return Response(
+        content=xml_content,
+        media_type="application/xml",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename_safe}_premiere.xml"'
+        }
+    )
 
 
 @app.get("/download/{clip_id}")

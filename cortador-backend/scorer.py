@@ -113,9 +113,9 @@ def score_trend(text: str) -> int:
 
 def score_flow(duration: float, word_count: int) -> int:
     score = 0
-    if 25 <= duration <= 55:
+    if 25 <= duration <= 90:
         score += 6
-    elif 15 <= duration <= 75:
+    elif 15 <= duration <= 100:
         score += 3
     if duration > 0:
         wps = word_count / duration
@@ -156,7 +156,7 @@ def build_reason(hook: int, emotion: int, tension: int) -> str:
 
 # ── Candidatos de clipe (scoring por keywords) ─────────────────────────────────
 
-def create_clip_candidates(segments: List[Dict], target_durations=[30, 45, 60]) -> List[Dict]:
+def create_clip_candidates(segments: List[Dict], target_durations=[30, 45, 60, 75, 90]) -> List[Dict]:
     candidates = []
 
     for i, seg in enumerate(segments):

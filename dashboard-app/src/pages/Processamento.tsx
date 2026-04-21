@@ -82,12 +82,15 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, na
 
           setPhase('process')
           const [durMin, durMax] = preset.durationRange
+          // Garante duração mínima de 30s e máxima de 90s
+          const minDur = Math.max(durMin, 30)
+          const maxDur = Math.min(durMax, 90)
           const approved = job.moments
             .filter((m: Moment) => {
               const dur = m.end - m.start
-              return dur >= durMin && dur <= durMax
+              return dur >= minDur && dur <= maxDur
             })
-            .slice(0, 10) // max 10 cortes por vez
+            .slice(0, 15) // max 15 cortes por vez
 
           await processClips({
             job_id: jobId,

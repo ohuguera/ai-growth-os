@@ -23,8 +23,8 @@ RUN mkdir -p uploads outputs jobs chunks
 
 EXPOSE 8000
 
-ARG CACHEBUST=6
-LABEL version="6"
+ARG CACHEBUST=8
+LABEL version="8"
 COPY cortador-backend/start.sh .
 RUN chmod +x start.sh
 CMD ["/bin/sh", "start.sh"]
