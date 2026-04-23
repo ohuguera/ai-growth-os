@@ -14,7 +14,7 @@ interface Step {
 
 const STEPS: Step[] = [
   { phase: 'upload',     label: 'Upload concluído',              detail: 'Vídeo recebido pelo servidor' },
-  { phase: 'transcribe', label: 'Transcrevendo com IA',          detail: 'Whisper medium analisando o áudio...' },
+  { phase: 'transcribe', label: 'Transcrevendo com IA',          detail: 'Whisper base analisando o áudio...' },
   { phase: 'ai',         label: 'Analisando com IA',             detail: 'Claude detectando hooks, desenvolvimento e CTAs...' },
   { phase: 'moments',    label: 'Detectando melhores momentos',  detail: 'Identificando picos de engajamento...' },
   { phase: 'process',    label: 'Gerando cortes',                detail: 'FFmpeg aplicando identidade e legendas...' },
@@ -44,6 +44,7 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, ho
   const [momentCount, setMomentCount] = useState<number | null>(null)
   const [transcriptionProgress, setTranscriptionProgress] = useState(0)
   const [retrying, setRetrying] = useState(false)
+  const [clipsProgress, setClipsProgress] = useState<{ done: number; total: number } | null>(null)
   const processed = useRef(false)
 
   useEffect(() => {
@@ -116,6 +117,9 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, ho
 
         } else if (job.status === 'processing') {
           setPhase('process')
+          if (job.clips_total) {
+            setClipsProgress({ done: job.clips_done ?? 0, total: job.clips_total })
+          }
         } else if (job.status === 'done') {
           setPhase('done')
           // Atualiza job no localStorage como done com contagem de clipes
@@ -141,7 +145,7 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, ho
           return
         }
 
-        timer = setTimeout(poll, 2500)
+        timer = setTimeout(poll, 1500)
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : 'Falha na conexão com o servidor')
       }
@@ -250,6 +254,20 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, ho
                       Transcrevendo... {transcriptionProgress}%
                       <div style={{ height: 4, background: '#1e293b', borderRadius: 2, marginTop: 4 }}>
                         <div style={{ height: '100%', width: `${transcriptionProgress}%`, background: expert.color, borderRadius: 2, transition: 'width 0.5s ease' }} />
+                      </div>
+                    </div>
+                  )}
+                  {step.phase === 'process' && phase === 'process' && clipsProgress && (
+                    <div style={{ marginTop: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
+                      {clipsProgress.done}/{clipsProgress.total} clipes prontos
+                      <div style={{ height: 4, background: '#1e293b', borderRadius: 2, marginTop: 4 }}>
+                        <div style={{
+                          height: '100%',
+                          width: `${Math.round((clipsProgress.done / clipsProgress.total) * 100)}%`,
+                          background: expert.color,
+                          borderRadius: 2,
+                          transition: 'width 0.5s ease'
+                        }} />
                       </div>
                     </div>
                   )}

@@ -54,7 +54,7 @@ def transcribe_video(video_path: str, progress_cb=None) -> list:
     raw_segments, info = model.transcribe(
         video_path,
         language="pt",
-        beam_size=5,
+        beam_size=1,  # greedy — 5-10x mais rápido que beam_size=5, qualidade aceitável para PT-BR
         word_timestamps=True,
         vad_filter=True,
         vad_parameters={"min_silence_duration_ms": 300},

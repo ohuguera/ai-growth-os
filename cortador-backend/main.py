@@ -4,6 +4,8 @@ from fastapi.responses import FileResponse, RedirectResponse, Response
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 import uuid, os, json, shutil
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from transcriber import transcribe_video
 from scorer import score_moments, analyze_with_ai
 from processor import process_clip
@@ -62,16 +64,41 @@ app.add_middleware(
 # ──────────────────────────────────────────
 
 def save_job(job_id: str, data: dict):
-    with open(f"{JOBS_DIR}/{job_id}.json", "w", encoding="utf-8") as f:
+    path = f"{JOBS_DIR}/{job_id}.json"
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+    # Backup no R2 em background — não bloqueia
+    if r2_storage.is_available():
+        threading.Thread(
+            target=_backup_job_r2,
+            args=(job_id, path),
+            daemon=True
+        ).start()
+
+
+def _backup_job_r2(job_id: str, local_path: str):
+    """Backup do job JSON no R2 (thread daemon)."""
+    try:
+        r2_storage.upload(local_path, f"jobs/{job_id}.json")
+    except Exception as e:
+        print(f"[R2] Job backup falhou (não-fatal): {e}")
 
 
 def load_job(job_id: str):
     path = f"{JOBS_DIR}/{job_id}.json"
-    if not os.path.exists(path):
-        return None
-    with open(path, encoding="utf-8") as f:
-        return json.load(f)
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    # Fallback: restaura do R2 se disponível (após restart do Railway)
+    if r2_storage.is_available():
+        try:
+            r2_storage.download(f"jobs/{job_id}.json", path)
+            print(f"[R2] Job {job_id} restaurado do R2")
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return None
 
 
 # ──────────────────────────────────────────
@@ -428,18 +455,25 @@ def _run_processing(job_id, video_path, moments, hook, cta, caption_position, wa
         print(f"[R2] Restaurando vídeo para processamento: {job['r2_key']}")
         r2_storage.download(job["r2_key"], video_path)
 
+    clips_lock = threading.Lock()
     clips = []
+    segments = job.get("segments", [])
+    total = len(moments)
 
-    for i, moment in enumerate(moments):
+    # Informa o frontend quantos clipes serão gerados
+    job["clips_total"] = total
+    job["clips_done"] = 0
+    save_job(job_id, job)
+
+    def process_one(args):
+        i, moment = args
         clip_id = f"{job_id}_clip_{i + 1}"
         output_path = f"{OUTPUT_DIR}/{clip_id}.mp4"
 
-        # Hook: usa o natural_hook do agente viral se disponível, senão usa o hook global
         effective_hook = (
             moment.get("natural_hook", "") if moment.get("use_natural_hook")
             else (moment.get("natural_hook") or hook)
         )
-        # CTA: usa cta_suggestion do agente se não foi passado CTA global
         effective_cta = cta or moment.get("cta_suggestion", "")
 
         try:
@@ -452,7 +486,7 @@ def _run_processing(job_id, video_path, moments, hook, cta, caption_position, wa
                 cta=effective_cta,
                 caption_position=caption_position,
                 watermark=watermark,
-                segments=job.get("segments", []),
+                segments=segments,
                 cta_video_path=cta_video_path,
                 caption_style=caption_style,
             )
@@ -464,7 +498,7 @@ def _run_processing(job_id, video_path, moments, hook, cta, caption_position, wa
                 except Exception as e:
                     print(f"[R2] Upload clip falhou (não-fatal): {e}")
 
-            clips.append({
+            result = {
                 "id": clip_id,
                 "path": output_path,
                 "r2_key": clip_r2_key,
@@ -475,15 +509,32 @@ def _run_processing(job_id, video_path, moments, hook, cta, caption_position, wa
                 "caption_style": caption_style,
                 "hook_used": effective_hook,
                 "status": "done"
-            })
+            }
         except Exception as e:
-            clips.append({
-                "id": clip_id,
-                "error": str(e),
-                "status": "error"
-            })
+            result = {"id": clip_id, "error": str(e), "status": "error"}
+            print(f"[Processing] Clip {clip_id} erro: {e}")
 
-    job["clips"] = clips
+        with clips_lock:
+            clips.append(result)
+            done = len([c for c in clips if c["status"] == "done"])
+            j = load_job(job_id)
+            if j:
+                j["clips"] = sorted(clips, key=lambda c: c.get("id", ""))
+                j["clips_done"] = done
+                j["clips_total"] = total
+                save_job(job_id, j)
+
+        return result
+
+    # 2 FFmpeg em paralelo — ótimo para 2 vCPU do Railway
+    max_workers = min(2, total)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        list(executor.map(process_one, enumerate(moments)))
+
+    job = load_job(job_id)
+    job["clips"] = sorted(clips, key=lambda c: c.get("id", ""))
+    job["clips_done"] = len([c for c in clips if c["status"] == "done"])
+    job["clips_total"] = total
     job["status"] = "done"
     save_job(job_id, job)
 
