@@ -295,7 +295,7 @@ def _run_transcription(job_id: str, video_path: str):
                     "end": m["end"],
                     "score": m["score"],
                     "text": m.get("reason", ""),
-                    "natural_hook": m.get("hook_text", ""),
+                    "natural_hook": m.get("natural_hook", ""),
                     "category": m.get("category", "desenvolvimento"),
                 })
         else:

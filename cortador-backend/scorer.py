@@ -210,14 +210,34 @@ def create_clip_candidates(segments: List[Dict], target_durations=[30, 45, 60, 7
                 "reason": build_reason(h, e, t),
             })
 
-    # Deduplica por janela de 10s — permite mais cortes em lives longas
+    # Deduplica por janela de 10s — sem threshold de score, sempre gera cortes
     deduped = []
     seen_buckets: set = set()
     for c in sorted(candidates, key=lambda x: x["score"], reverse=True):
         bucket = int(c["start"] // 10) * 10
-        if bucket not in seen_buckets and c["score"] >= 25:
+        if bucket not in seen_buckets:
             seen_buckets.add(bucket)
             deduped.append(c)
+
+    # Fallback: se não detectou nada, gera cortes uniformes a cada 45s
+    if not deduped and segments:
+        video_end = segments[-1]["end"]
+        t = 0.0
+        while t + 20 <= video_end:
+            clip_end = min(t + 60, video_end)
+            deduped.append({
+                "start": round(t, 2),
+                "end": round(clip_end, 2),
+                "duration": round(clip_end - t, 2),
+                "text": "",
+                "score": 30,
+                "hook_score": 0, "emotion_score": 0, "tension_score": 0,
+                "trend_score": 0, "flow_score": 0,
+                "moment_type": "geral",
+                "natural_hook": None,
+                "reason": "Corte automático",
+            })
+            t += 45
 
     return deduped[:30]  # até 30 cortes por live
 

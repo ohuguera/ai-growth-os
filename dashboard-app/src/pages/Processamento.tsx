@@ -85,34 +85,25 @@ export default function Processamento({ jobId, expertId, liveTitle, presetId, ho
 
           setPhase('process')
           const [durMin, durMax] = preset.durationRange
-          // Garante duração mínima de 30s e máxima de 90s
-          const minDur = Math.max(durMin, 30)
-          const maxDur = Math.min(durMax, 90)
           const approved = job.moments
             .filter((m: Moment) => {
               const dur = m.end - m.start
-              return dur >= minDur && dur <= maxDur
+              return dur >= durMin && dur <= durMax
             })
-            .slice(0, 15) // max 15 cortes por vez
+            .slice(0, 15)
+
+          // fallback: usa todos os momentos sem filtro de duração do preset
+          const momentsToProcess = approved.length > 0 ? approved : job.moments.slice(0, 15)
 
           await processClips({
             job_id: jobId,
-            approved_moments: approved.length > 0
-              ? approved.map((m: Moment) => ({
-                  start: m.start,
-                  end: m.end,
-                  score: m.score,
-                  use_natural_hook: !!m.natural_hook,
-                  natural_hook: m.natural_hook || '',
-                }))
-              // fallback: usa todos os momentos sem filtro de duração
-              : job.moments.slice(0, 10).map((m: Moment) => ({
-                  start: m.start,
-                  end: m.end,
-                  score: m.score,
-                  use_natural_hook: !!m.natural_hook,
-                  natural_hook: m.natural_hook || '',
-                })),
+            approved_moments: momentsToProcess.map((m: Moment) => ({
+              start: m.start,
+              end: m.end,
+              score: m.score,
+              use_natural_hook: !!m.natural_hook,
+              natural_hook: m.natural_hook || '',
+            })),
             hook: hook || '',
             cta: cta || 'Segue o perfil!',
             caption_position: 'middle',
