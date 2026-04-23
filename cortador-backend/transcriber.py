@@ -14,9 +14,9 @@ IGAMING_PROMPT = (
 def get_model():
     global _model, _model_name
     if _model is None:
-        # medium: 769MB RAM, ~4x mais rápido que large-v3, ótima precisão PT-BR
-        # large-v3 precisa ~3GB RAM — estoura OOM em Railway
-        for model_name in ["medium", "base"]:
+        # base: ~150MB RAM — único modelo que cabe no Railway trial (1GB)
+        # medium (769MB) causa OOM kill silencioso no container
+        for model_name in ["base"]:
             try:
                 print(f"[Whisper] Carregando modelo {model_name}...")
                 _model = WhisperModel(model_name, device="cpu", compute_type="int8")
