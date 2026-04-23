@@ -23,7 +23,10 @@ for d in [UPLOAD_DIR, OUTPUT_DIR, JOBS_DIR]:
 
 
 def _reset_stuck_jobs():
-    """No startup: jobs presos em 'transcribing' ou 'processing' viram 'error' com mensagem de retry."""
+    """
+    No startup: jobs presos em 'transcribing' ou 'processing' são automaticamente
+    reiniciados em background — sem precisar de intervenção manual do usuário.
+    """
     if not os.path.exists(JOBS_DIR):
         return
     for fname in os.listdir(JOBS_DIR):
@@ -33,12 +36,46 @@ def _reset_stuck_jobs():
             path = f"{JOBS_DIR}/{fname}"
             with open(path, encoding="utf-8") as f:
                 job = json.load(f)
-            if job.get("status") in ("transcribing", "processing"):
-                print(f"[Startup] Job {job.get('id')} preso em '{job['status']}' → resetado para 'error'")
+            status = job.get("status")
+            job_id = job.get("id", fname.replace(".json", ""))
+
+            if status == "transcribing":
+                video_path = job.get("video_path", "")
+                # Restaura vídeo do R2 se necessário
+                if not os.path.exists(video_path) and job.get("r2_key") and r2_storage.is_available():
+                    try:
+                        r2_storage.download(job["r2_key"], video_path)
+                        print(f"[Startup] Vídeo {job_id} restaurado do R2")
+                    except Exception as e:
+                        print(f"[Startup] Falha ao restaurar vídeo {job_id} do R2: {e}")
+                        video_path = ""
+
+                if video_path and os.path.exists(video_path):
+                    print(f"[Startup] Job {job_id} retomando transcrição automaticamente...")
+                    job["transcription_progress"] = 0
+                    job.pop("error", None)
+                    with open(path, "w", encoding="utf-8") as f:
+                        json.dump(job, f, ensure_ascii=False, indent=2)
+                    threading.Thread(
+                        target=_run_transcription,
+                        args=(job_id, video_path),
+                        daemon=True
+                    ).start()
+                else:
+                    print(f"[Startup] Job {job_id} sem vídeo disponível → error")
+                    job["status"] = "error"
+                    job["error"] = "video_not_found_after_restart"
+                    with open(path, "w", encoding="utf-8") as f:
+                        json.dump(job, f, ensure_ascii=False, indent=2)
+
+            elif status == "processing":
+                # Processing não é retomável (FFmpeg não tem checkpoint) — marca error
+                print(f"[Startup] Job {job_id} estava em processing → error (reprocesse manualmente)")
                 job["status"] = "error"
                 job["error"] = "server_restart"
                 with open(path, "w", encoding="utf-8") as f:
                     json.dump(job, f, ensure_ascii=False, indent=2)
+
         except Exception as e:
             print(f"[Startup] Erro ao checar job {fname}: {e}")
 
